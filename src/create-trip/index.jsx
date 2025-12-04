@@ -71,7 +71,7 @@ function CreateTrip() {
             }
             try {
                 const results = await getPlacePredictions(text);
-                setSuggestions(results);
+                setSuggestions(results || []);
             } catch (error) {
                 console.error('Error fetching place predictions:', error);
                 setSuggestions([]);

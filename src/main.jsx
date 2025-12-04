@@ -22,7 +22,7 @@ const router=createBrowserRouter([
         element: <App/>
       },
       {
-        path: '/Create-trip',
+        path: '/create-trip',
         element:<CreateTrip/>
       },
       {

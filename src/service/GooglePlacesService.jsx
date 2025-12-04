@@ -16,7 +16,10 @@ export const initGooglePlaces = () => {
 
     // Load Google Maps script if not already loaded
     if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+      let attempts = 0;
+      const maxAttempts = 50; // 5 seconds max wait
       const checkInterval = setInterval(() => {
+        attempts++;
         if (window.google && window.google.maps && window.google.maps.places) {
           clearInterval(checkInterval);
           autocompleteService = new window.google.maps.places.AutocompleteService();
@@ -24,6 +27,9 @@ export const initGooglePlaces = () => {
             document.createElement('div')
           );
           resolve();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkInterval);
+          reject(new Error('Google Maps API failed to load'));
         }
       }, 100);
       return;
@@ -52,6 +58,12 @@ export const getPlacePredictions = async (input) => {
     await initGooglePlaces();
   }
 
+  // Ensure Google Maps is loaded
+  if (!window.google || !window.google.maps || !window.google.maps.places) {
+    console.error('Google Maps API not loaded');
+    return [];
+  }
+
   return new Promise((resolve, reject) => {
     autocompleteService.getPlacePredictions(
       {
@@ -62,7 +74,16 @@ export const getPlacePredictions = async (input) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
           resolve(predictions);
         } else {
-          resolve([]);
+          // Log error status for debugging
+          console.warn('Google Places Autocomplete status:', status);
+          if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+            resolve([]);
+          } else if (status === window.google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
+            console.error('Google Places API request denied. Check API key and billing.');
+            resolve([]);
+          } else {
+            resolve([]);
+          }
         }
       }
     );
