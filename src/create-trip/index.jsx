@@ -19,7 +19,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/service/firebaseConfig';
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getPlacePredictions, getPlaceDetails, initGooglePlaces } from '@/service/GooglePlacesService';
+import { getPlacePredictions, getPlaceDetails } from '@/service/GooglePlacesService';
 import { User, Users, UsersRound, DollarSign, Wallet, Sparkles, Zap } from 'lucide-react';
 
 function CreateTrip() {
@@ -32,16 +32,11 @@ function CreateTrip() {
     const [suggestions, setSuggestions] = useState([]);
 
     const debounceRef = useRef(null);
-    const [placesInitialized, setPlacesInitialized] = useState(false);
+    const suggestionsRef = useRef(null);
+    const inputContainerRef = useRef(null);
 
-    // Initialize Google Places API on component mount
-    useEffect(() => {
-        initGooglePlaces().then(() => {
-            setPlacesInitialized(true);
-        }).catch((err) => {
-            console.error('Failed to initialize Google Places:', err);
-        });
-    }, []);
+    // Note: We use the newer Places API (New) REST endpoint, so we don't need to initialize Google Maps JS API
+    // The getPlacePredictions function will use the REST API directly
 
     // Check if user came from sign-in button
     useEffect(() => {
@@ -52,6 +47,29 @@ function CreateTrip() {
             }
         }
     }, [searchParams]);
+
+    // Close suggestions when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            // Check if click is outside both the input container and suggestions list
+            if (
+                inputContainerRef.current &&
+                !inputContainerRef.current.contains(event.target) &&
+                suggestionsRef.current &&
+                !suggestionsRef.current.contains(event.target)
+            ) {
+                setSuggestions([]);
+            }
+        };
+
+        if (suggestions.length > 0) {
+            // Use a small delay to allow click events to fire first
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+            };
+        }
+    }, [suggestions]);
 
     // Handle location search with debouncing to reduce API calls
     const handleSearch = (text) => {
@@ -64,10 +82,6 @@ function CreateTrip() {
             if (text.length < 2) {
                 setSuggestions([]);
                 return;
-            }
-            if (!placesInitialized) {
-                await initGooglePlaces();
-                setPlacesInitialized(true);
             }
             try {
                 const results = await getPlacePredictions(text);
@@ -228,25 +242,50 @@ function CreateTrip() {
             </h2>
             <p className='mt-3 text-muted-foreground text-lg'>Just provide some basic information and our trip planner will handle the rest!</p>
 
-            <div className="relative w-full my-5">
+            <div className="relative w-full my-5" ref={inputContainerRef}>
                 <Input
                     type="text"
                     placeholder="Search for a city"
                     value={query}
                     onChange={(e) => handleSearch(e.target.value)}
+                    onFocus={() => {
+                        // Keep suggestions open when input is focused
+                        if (query.length >= 2 && suggestions.length === 0) {
+                            handleSearch(query);
+                        }
+                    }}
                     className="w-full bg-neutral-50 border-border shadow-sm text-gray-600 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none"
                 />
 
                 {suggestions.length > 0 && (
-                    <ul className="absolute bg-popover text-popover-foreground border border-border rounded-md w-full mt-2 z-50 shadow-md max-h-60 overflow-y-auto">
+                    <ul 
+                        ref={suggestionsRef}
+                        className="absolute bg-popover text-popover-foreground border border-border rounded-md w-full mt-2 z-[100] shadow-md max-h-60 overflow-y-auto"
+                        onMouseDown={(e) => {
+                            // Prevent input blur when clicking on suggestions
+                            e.preventDefault();
+                        }}
+                    >
                         {suggestions.map((prediction, idx) => (
                             <li
                                 key={prediction.place_id || idx}
-                                onClick={() => handleSelect(prediction)}
-                                className="px-3 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleSelect(prediction);
+                                }}
+                                className="px-3 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer select-none active:bg-accent transition-colors"
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleSelect(prediction);
+                                    }
+                                }}
                             >
-                                <div className="font-medium">{prediction.structured_formatting.main_text}</div>
-                                {prediction.structured_formatting.secondary_text && (
+                                <div className="font-medium">{prediction.structured_formatting?.main_text || prediction.description || 'Unknown'}</div>
+                                {prediction.structured_formatting?.secondary_text && (
                                     <div className="text-sm text-muted-foreground">
                                         {prediction.structured_formatting.secondary_text}
                                     </div>
