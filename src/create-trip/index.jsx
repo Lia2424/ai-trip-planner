@@ -1,0 +1,374 @@
+import React, { useState, useEffect, useRef } from 'react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { AI_PROMPT, SelectBudgetOptions, SelectTravelersList } from '@/constants/options'
+import { toast } from 'sonner';
+import { chatSession } from '@/service/AIModel';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { FcGoogle } from "react-icons/fc";
+import { useGoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/service/firebaseConfig';
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getPlacePredictions, getPlaceDetails, initGooglePlaces } from '@/service/GooglePlacesService';
+import { User, Users, UsersRound, DollarSign, Wallet, Sparkles, Zap } from 'lucide-react';
+
+function CreateTrip() {
+    const [location, setLocation] = useState();
+    const [formData, setFormData] = useState([]);
+    const [searchParams] = useSearchParams();
+    const [openDialogue, setOpenDialogue] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [query, setQuery] = useState("");
+    const [suggestions, setSuggestions] = useState([]);
+
+    const debounceRef = useRef(null);
+    const [placesInitialized, setPlacesInitialized] = useState(false);
+
+    // Initialize Google Places API on component mount
+    useEffect(() => {
+        initGooglePlaces().then(() => {
+            setPlacesInitialized(true);
+        }).catch((err) => {
+            console.error('Failed to initialize Google Places:', err);
+        });
+    }, []);
+
+    // Check if user came from sign-in button
+    useEffect(() => {
+        if (searchParams.get('signin') === 'true') {
+            const user = localStorage.getItem('user');
+            if (!user) {
+                setOpenDialogue(true);
+            }
+        }
+    }, [searchParams]);
+
+    // Handle location search with debouncing to reduce API calls
+    const handleSearch = (text) => {
+        setQuery(text);
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+
+        // Debounce API call to avoid excessive requests
+        debounceRef.current = setTimeout(async () => {
+            if (text.length < 2) {
+                setSuggestions([]);
+                return;
+            }
+            if (!placesInitialized) {
+                await initGooglePlaces();
+                setPlacesInitialized(true);
+            }
+            try {
+                const results = await getPlacePredictions(text);
+                setSuggestions(results);
+            } catch (error) {
+                console.error('Error fetching place predictions:', error);
+                setSuggestions([]);
+            }
+        }, 400);
+    };
+
+    // Handle location selection from autocomplete suggestions
+    const handleSelect = async (prediction) => {
+        try {
+            const placeDetails = await getPlaceDetails(prediction.place_id);
+            const formatted = placeDetails.formatted || prediction.description || "Unknown";
+
+            setLocation(formatted);
+            setQuery(formatted);
+            setSuggestions([]);
+
+            setFormData((prev) => ({
+                ...prev,
+                location: formatted,                  
+            }));
+        } catch (error) {
+            console.error('Error fetching place details:', error);
+            const formatted = prediction.description || "Unknown";
+            setLocation(formatted);
+            setQuery(formatted);
+            setSuggestions([]);
+            setFormData((prev) => ({
+                ...prev,
+                location: formatted,                  
+            }));
+        }
+    };
+
+    const navigate = useNavigate();
+
+    // Update form data when user makes selections
+    const handleInputChange = (name, value) => {
+        setFormData({
+            ...formData,
+            [name]: value
+        })
+    }
+
+    useEffect(() => {
+        // Form data updated
+    }, [formData])
+
+    const login = useGoogleLogin({
+        onSuccess: (codeResp) => GetUserProfile(codeResp),
+        onError: () => {
+            toast.error('Failed to sign in');
+        }
+    })
+
+    // Generate AI-powered travel plan based on user inputs
+    const OnGenerateTrip = async () => {
+        const user = localStorage.getItem('user');
+
+        if (!user) {
+            setOpenDialogue(true);
+            return;
+        }
+
+        if (!formData.location ||!formData?.noOfDays || !formData?.budget || !formData?.traveler) {
+            toast("Please fill all details.");
+            return;
+        }
+
+        if (Number(formData?.noOfDays) <= 0) {
+            toast("Trip duration must be at least 1 day.");
+            return;
+        }
+
+        if (formData?.noOfDays > 50) {
+            toast("Trip duration cannot exceed 50 days.");
+            return;
+        }
+
+        setLoading(true);
+        // Build AI prompt with user preferences
+        const FINAL_PROMPT = AI_PROMPT
+            .replace('{location}', formData?.location || 'Unknown')
+            .replace('{totalDays}', formData?.noOfDays)
+            .replace('{traveler}', formData?.traveler)
+            .replace('{budget}', formData?.budget)
+
+        // Generate trip plan using Google Gemini AI
+        const result = await chatSession.sendMessage(FINAL_PROMPT);
+        setLoading(false);
+        SaveAiTrip(result?.response?.text());
+    }
+
+    const GetUserProfile = (tokenInfo) => {
+        axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokenInfo?.access_token}`, {
+            headers: {
+                Authorization: `Bearer ${tokenInfo?.access_token}`,
+                Accept: 'Application/json'
+            }
+        }).then((resp) => {
+            localStorage.setItem('user', JSON.stringify(resp.data));
+            setOpenDialogue(false);
+            OnGenerateTrip();
+        })
+    }
+
+    // Save generated trip to Firebase Firestore
+    const SaveAiTrip = async (TripData) => {
+        setLoading(true);
+        const user = JSON.parse(localStorage.getItem('user'));
+        const docId = Date.now().toString()
+
+        await setDoc(doc(db, "AITrips", docId), {
+            userSelection: formData,
+            tripData: JSON.parse(TripData),
+            userEmail: user?.email,
+            id: docId,
+            imageCache: {
+                destinationImage: "/placeholder.jpg", 
+            },
+        });
+        setLoading(false);
+        navigate('/view-trip/' + docId)
+    }
+
+    const getTravelerIcon = (iconName) => {
+        const iconClass = "w-8 h-8 text-primary";
+        switch(iconName) {
+            case 'user': return <User className={iconClass} />;
+            case 'users': return <Users className={iconClass} />;
+            case 'users-round': return <UsersRound className={iconClass} />;
+            default: return <User className={iconClass} />;
+        }
+    };
+
+    const getBudgetIcon = (iconName) => {
+        const iconClass = "w-8 h-8 text-primary";
+        switch(iconName) {
+            case '💵': return <DollarSign className={iconClass} />;
+            case '💰': return <Wallet className={iconClass} />;
+            case '💸': return <Sparkles className={iconClass} />;
+            default: return <DollarSign className={iconClass} />;
+        }
+    };
+
+    return (
+        <div className='container mx-auto px-4 lg:px-6 mt-10 max-w-4xl'>
+            <div className='bg-card border border-border rounded-xl p-6 md:p-8 shadow-lg'>
+            <h2
+              className='font-heading font-bold text-3xl md:text-4xl bg-clip-text text-transparent'
+              style={{ backgroundImage: 'var(--gradient)' }}
+            >
+              Tell us your travel information
+            </h2>
+            <p className='mt-3 text-muted-foreground text-lg'>Just provide some basic information and our trip planner will handle the rest!</p>
+
+            <div className="relative w-full my-5">
+                <Input
+                    type="text"
+                    placeholder="Search for a city"
+                    value={query}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="w-full bg-neutral-50 border-border shadow-sm text-gray-600 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none"
+                />
+
+                {suggestions.length > 0 && (
+                    <ul className="absolute bg-popover text-popover-foreground border border-border rounded-md w-full mt-2 z-50 shadow-md max-h-60 overflow-y-auto">
+                        {suggestions.map((prediction, idx) => (
+                            <li
+                                key={prediction.place_id || idx}
+                                onClick={() => handleSelect(prediction)}
+                                className="px-3 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                            >
+                                <div className="font-medium">{prediction.structured_formatting.main_text}</div>
+                                {prediction.structured_formatting.secondary_text && (
+                                    <div className="text-sm text-muted-foreground">
+                                        {prediction.structured_formatting.secondary_text}
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
+            {location && (
+                <p className="text-muted-foreground text-sm -my-4">
+                    Selected: <strong>{location}</strong>
+                </p>
+            )}
+
+            <div className='mt-8 flex flex-col gap-8'>
+                <div>
+                    <h2 className='text-xl font-semibold mb-4 text-foreground'>How many days is your trip?</h2>
+                    <Input
+                        placeholder={'Ex. 4'}
+                        type="number"
+                        min={1}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className="bg-white border-border shadow-sm text-gray-600 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none"
+                        onKeyDown={(e) => {
+                            if (["-", "+", "e", "E"].includes(e.key)) {
+                                e.preventDefault();
+                            }
+                        }}
+                        onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9]/g, "");
+                            handleInputChange('noOfDays', val);
+                        }}
+                    />
+                </div>
+            </div>
+
+            <div className='mt-12'>
+                <h2 className='text-xl font-semibold mb-4 text-foreground'>How many people are you travelling with?</h2>
+                <div className='grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5'>
+                    {SelectTravelersList.map((item, index) => (
+                        <div key={index}
+                            onClick={() => handleInputChange('traveler', item.people)}
+                            className={`p-6 border-2 border-border cursor-pointer 
+                        rounded-xl hover:shadow-lg hover:border-primary/50 transition-all
+                        ${formData?.traveler == item.people ? 'shadow-lg border-primary bg-primary/10' : 'bg-card'}
+                        `}>
+                            <div className='flex justify-center mb-3'>
+                                {getTravelerIcon(item.icon)}
+                            </div>
+                            <h2 className='font-bold text-base text-center'>{item.title}</h2>
+                            <h2 className='text-xs text-muted-foreground mt-2 text-center'>{item.desc}</h2>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className='mt-12'>
+                <h2 className='text-xl font-semibold mb-4 text-foreground'>What is your budget?</h2>
+                <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5'>
+                    {SelectBudgetOptions.map((item, index) => (
+                        <div key={index}
+                            onClick={() => handleInputChange('budget', item.title)}
+                            className={`p-6 border-2 border-border cursor-pointer
+                        rounded-xl hover:shadow-lg hover:border-primary/50 transition-all
+                        ${formData?.budget == item.title ? 'shadow-lg border-primary bg-primary/10' : 'bg-card'}
+                        `}>
+                            <div className='flex justify-center mb-3'>
+                                {getBudgetIcon(item.icon)}
+                            </div>
+                            <h2 className='font-bold text-lg text-center'>{item.title}</h2>
+                            <h2 className='text-sm text-muted-foreground mt-2 text-center'>{item.desc}</h2>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className='my-10 justify-center flex'>
+                <Button 
+                    size="lg"
+                    className='text-lg py-6 px-12 font-semibold'
+                    disabled={loading}
+                    onClick={OnGenerateTrip}>
+                    {loading ?
+                        <AiOutlineLoading3Quarters className='h-7 w-7 animate-spin' /> : 'Generate Trip'
+                    }
+                </Button>
+            </div>
+
+            <Dialog open={openDialogue} onOpenChange={setOpenDialogue}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="sr-only">Sign In</DialogTitle>
+                        <DialogDescription className="space-y-6">
+                            <div className="flex flex-col items-center pt-2">
+                                <div className="flex items-center space-x-2">
+                                    <Zap className="h-5 w-5 text-primary" />
+                                    <span className="font-bold text-lg text-foreground">TripKitAI</span>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-4 text-center">
+                                <div>
+                                    <h2 className='font-semibold text-lg text-foreground mb-2'>Sign In With Google</h2>
+                                    <p className='text-sm text-muted-foreground'>Sign in to save and manage your trips</p>
+                                </div>
+                                <Button
+                                    onClick={login}
+                                    className='w-full flex gap-3 items-center justify-center py-6'>
+                                    <FcGoogle className='h-5 w-5' />
+                                    <span>Sign In With Google</span>
+                                </Button>
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+                </DialogContent>
+            </Dialog>
+            </div>
+        </div>
+    )
+}
+
+export default CreateTrip
