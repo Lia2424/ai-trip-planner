@@ -166,6 +166,8 @@ function CreateTrip() {
         }
 
         setLoading(true);
+        const loadingToast = toast.loading("Generating your trip plan... This may take 30-60 seconds.");
+        
         try {
             // Build AI prompt with user preferences
             const FINAL_PROMPT = AI_PROMPT
@@ -174,9 +176,17 @@ function CreateTrip() {
                 .replace('{traveler}', formData?.traveler)
                 .replace('{budget}', formData?.budget)
 
-            // Generate trip plan using Google Gemini AI
+            // Generate trip plan using Google Gemini AI with timeout
             // Note: AI generation can take 30-60 seconds for complex trips
-            const result = await chatSession.sendMessage(FINAL_PROMPT);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout. The AI is taking too long. Please try again.')), 90000)
+            );
+            
+            const aiPromise = chatSession.sendMessage(FINAL_PROMPT);
+            const result = await Promise.race([aiPromise, timeoutPromise]);
+            
+            toast.dismiss(loadingToast);
+            toast.success("Trip plan generated successfully!");
             
             console.log('Full AI Result:', result); // Debug log
             
@@ -216,9 +226,9 @@ function CreateTrip() {
                 cleanedResponse = cleanedResponse.replace(/```\n?/g, '').trim();
             }
             
-            setLoading(false);
-            SaveAiTrip(cleanedResponse);
+            await SaveAiTrip(cleanedResponse);
         } catch (error) {
+            toast.dismiss(loadingToast);
             setLoading(false);
             console.error('Error generating trip:', error);
             const errorMessage = error.message || 'Failed to generate trip. Please try again.';
@@ -236,12 +246,17 @@ function CreateTrip() {
             localStorage.setItem('user', JSON.stringify(resp.data));
             setOpenDialogue(false);
             OnGenerateTrip();
+        }).catch((error) => {
+            console.error('Error fetching user profile:', error);
+            toast.error('Failed to sign in. Please try again.');
+            setOpenDialogue(false);
         })
     }
 
     // Save generated trip to Firebase Firestore
     const SaveAiTrip = async (TripData) => {
-        setLoading(true);
+        const saveToast = toast.loading("Saving your trip...");
+        
         try {
             // Get user if signed in (optional)
             const userStr = localStorage.getItem('user');
@@ -263,7 +278,12 @@ function CreateTrip() {
                 throw new Error('Invalid trip data structure. Please try again.');
             }
 
-            await setDoc(doc(db, "AITrips", docId), {
+            // Add timeout for Firestore save
+            const saveTimeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Save timeout. Please try again.')), 10000)
+            );
+            
+            const savePromise = setDoc(doc(db, "AITrips", docId), {
                 userSelection: formData,
                 tripData: parsedData,
                 userEmail: user?.email || null, // Optional - null if not signed in
@@ -272,9 +292,15 @@ function CreateTrip() {
                     destinationImage: "/placeholder.jpg", 
                 },
             });
+            
+            await Promise.race([savePromise, saveTimeoutPromise]);
+            
+            toast.dismiss(saveToast);
             setLoading(false);
+            toast.success("Trip saved successfully!");
             navigate('/view-trip/' + docId)
         } catch (error) {
+            toast.dismiss(saveToast);
             setLoading(false);
             console.error('Error saving trip:', error);
             toast.error(error.message || 'Failed to save trip. Please try again.');
