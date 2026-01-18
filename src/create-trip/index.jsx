@@ -98,14 +98,21 @@ function CreateTrip() {
         try {
             const placeDetails = await getPlaceDetails(prediction.place_id);
             const formatted = placeDetails.formatted || prediction.description || "Unknown";
+            const city = placeDetails.city || "";
+            const country = placeDetails.country || "";
+            
+            // Format display: "City, Country" or just formatted address
+            const displayLocation = city && country ? `${city}, ${country}` : formatted;
 
-            setLocation(formatted);
-            setQuery(formatted);
+            setLocation(displayLocation);
+            setQuery(displayLocation);
             setSuggestions([]);
 
             setFormData((prev) => ({
                 ...prev,
-                location: formatted,                  
+                location: formatted,
+                city: city,
+                country: country,
             }));
         } catch (error) {
             console.error('Error fetching place details:', error);
@@ -166,17 +173,29 @@ function CreateTrip() {
         }
 
         setLoading(true);
-        // Build AI prompt with user preferences
-        const FINAL_PROMPT = AI_PROMPT
-            .replace('{location}', formData?.location || 'Unknown')
-            .replace('{totalDays}', formData?.noOfDays)
-            .replace('{traveler}', formData?.traveler)
-            .replace('{budget}', formData?.budget)
+        try {
+            // Build AI prompt with user preferences
+            const FINAL_PROMPT = AI_PROMPT
+                .replace('{location}', formData?.location || 'Unknown')
+                .replace('{totalDays}', formData?.noOfDays)
+                .replace('{traveler}', formData?.traveler)
+                .replace('{budget}', formData?.budget)
 
-        // Generate trip plan using Google Gemini AI
-        const result = await chatSession.sendMessage(FINAL_PROMPT);
-        setLoading(false);
-        SaveAiTrip(result?.response?.text());
+            // Generate trip plan using Google Gemini AI with shorter timeout
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout - AI generation took too long')), 30000)
+            );
+            
+            const aiPromise = chatSession.sendMessage(FINAL_PROMPT);
+            const result = await Promise.race([aiPromise, timeoutPromise]);
+            
+            setLoading(false);
+            SaveAiTrip(result?.response?.text());
+        } catch (error) {
+            setLoading(false);
+            console.error('Error generating trip:', error);
+            toast.error(error.message || 'Failed to generate trip. Please try again.');
+        }
     }
 
     const GetUserProfile = (tokenInfo) => {
