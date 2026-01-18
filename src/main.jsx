@@ -41,10 +41,16 @@ const router=createBrowserRouter([
   }
 ])
 
+// Validate Google OAuth Client ID
+const googleClientId = import.meta.env.VITE_GOOGLE_AUTH_CLIENT_ID;
+if (!googleClientId) {
+  console.error('❌ VITE_GOOGLE_AUTH_CLIENT_ID is missing! Please set it in your environment variables.');
+}
+
 // Initialize React app with OAuth provider and routing
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_AUTH_CLIENT_ID}>
+    <GoogleOAuthProvider clientId={googleClientId || ''}>
       <RouterProvider router={router}/>
     </GoogleOAuthProvider>
   </StrictMode>,

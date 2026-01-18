@@ -1,6 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const apiKey = import.meta.env.VITE_GOOGLE_GEMINI_AI_API_KEY;
+
+if (!apiKey) {
+    console.error('❌ VITE_GOOGLE_GEMINI_AI_API_KEY is missing! Please set it in your environment variables.');
+    throw new Error('Google Gemini AI API key is not configured. Please check your environment variables.');
+}
+
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // Initialize Gemini model with JSON response format
