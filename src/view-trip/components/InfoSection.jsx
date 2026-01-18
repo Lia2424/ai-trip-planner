@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { MdIosShare } from "react-icons/md"
 import { FaWhatsapp, FaTelegramPlane, FaFacebookF, FaEnvelope } from "react-icons/fa"
 import {
@@ -13,6 +13,8 @@ import { PHOTO_REF_URL } from '@/service/GlobalApi';
 
 function InfoSection({ trip }) {
   const [photoUrl, setPhotoUrl] = useState();
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('');
   const shareUrl = `${window.location.origin}/view-trip/${trip?.id}`
   const [copied, setCopied] = useState(false)
 
@@ -35,22 +37,65 @@ function InfoSection({ trip }) {
     { name: 'Facebook', icon: <FaFacebookF className="text-blue-600" />, url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}` },
   ]
 
+  // Fetch destination photo and location details from Google Places API
+  const GetPlacePhoto = useCallback(async () => {
+    const data={
+      textQuery:trip?.tripData?.travel_plan?.location || trip?.userSelection?.location
+    }
+    await GetPlaceDetails(data).then(resp=>{
+      if (resp.data.places[0].photos && resp.data.places[0].photos[3]) {
+        const PhotoURL=PHOTO_REF_URL.replace('{NAME}',resp.data.places[0].photos[3].name);
+        setPhotoUrl(PhotoURL);
+      }
+      
+      // Extract city and country from address components
+      const place = resp.data.places[0];
+      
+      // Try to get from addressComponents first
+      if (place.addressComponents) {
+        const cityComponent = place.addressComponents.find(
+          comp => comp.types.includes('locality') || comp.types.includes('administrative_area_level_1')
+        );
+        const countryComponent = place.addressComponents.find(
+          comp => comp.types.includes('country')
+        );
+        
+        if (cityComponent) {
+          setCity(cityComponent.longText || cityComponent.shortText || '');
+        }
+        if (countryComponent) {
+          setCountry(countryComponent.longText || countryComponent.shortText || '');
+        }
+      }
+      
+      // Fallback to parsing formatted address
+      if (!city && place.formattedAddress) {
+        const addressParts = place.formattedAddress.split(',').map(s => s.trim());
+        if (addressParts.length >= 2) {
+          setCity(addressParts[0]);
+          setCountry(addressParts[addressParts.length - 1]);
+        }
+      }
+    }).catch(() => {
+      // If API call fails, try to parse from stored location
+      const location = trip?.tripData?.travel_plan?.location || trip?.userSelection?.location || '';
+      if (location) {
+        const parts = location.split(',').map(s => s.trim());
+        if (parts.length >= 2) {
+          setCity(parts[0]);
+          setCountry(parts[parts.length - 1]);
+        } else {
+          setCity(location);
+        }
+      }
+    })
+  }, [trip]);
+
   useEffect(()=>{
     if (trip) {
       GetPlacePhoto();
     }
-  }, [trip])
-
-  // Fetch destination photo from Google Places API
-  const GetPlacePhoto=async()=>{
-    const data={
-      textQuery:trip?.tripData?.travel_plan?.location
-    }
-    await GetPlaceDetails(data).then(resp=>{
-      const PhotoURL=PHOTO_REF_URL.replace('{NAME}',resp.data.places[0].photos[3].name);
-      setPhotoUrl(PhotoURL);
-    })
-  }
+  }, [trip, GetPlacePhoto])
 
   return (
     <div>
@@ -58,7 +103,11 @@ function InfoSection({ trip }) {
       
       <div className='flex justify-between items-center'>
         <div className='my-5 flex flex-col gap-3'>
-          <h2 className='font-bold text-2xl text-foreground'>{trip?.tripData?.travel_plan?.location}</h2>
+          {city && country ? (
+            <h2 className='font-bold text-2xl text-foreground'>{city.trim()}, {country.trim()}</h2>
+          ) : (
+            <h2 className='font-bold text-2xl text-foreground'>{trip?.tripData?.travel_plan?.location || trip?.userSelection?.location}</h2>
+          )}
           <div className='flex gap-3 flex-wrap'>
             <div className='px-3 py-1.5 bg-muted border border-border rounded-full text-foreground font-medium text-sm'>
               📅 {trip.userSelection?.noOfDays} day(s)

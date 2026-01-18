@@ -24,7 +24,7 @@ export const chatSession = model.startChat({
         {
             role: "user",
             parts: [
-                {text: "Generate travel plan for Location: Paris, for 3 days for couple with cheap budget, give me hotels options list with hotel name, hotel address, price, hotel image url, geo coordinates, rating out of 5 stars, descriptions, and suggest an itenerary with one place name at a time, place details, place image url, geo coordinates, ticket pricing, rating, with each day's plan having the best time to visit the locations in JSON format."},
+                {text: "Generate travel plan for Location: Paris, for 3 days for couple with cheap budget, give me hotels options list with hotel name, hotel address, price in USD (US dollars), hotel image url, geo coordinates, rating out of 5 stars, descriptions, and suggest an itenerary with one place name at a time, place details, place image url, geo coordinates, ticket pricing in USD (US dollars), rating, with each day's plan having the best time to visit the locations in JSON format. All prices must be in USD format like $50-$70 or $100 per person."},
             ],
         },
         {
@@ -43,7 +43,7 @@ export const chatSession = model.startChat({
                             {
                               name: "Hôtel Richard",
                               address: "39 Rue Richard Lenoir, 75011 Paris, France",
-                              price_per_night: "€70-€90",
+                              price_per_night: "$70-$90",
                               image_url: "https://example.com/hotel_richard.jpg",
                               geo_coordinates: { latitude: 48.8579, longitude: 2.3837 },
                               rating: 7.5,
@@ -53,7 +53,7 @@ export const chatSession = model.startChat({
                             {
                               name: "HotelF1 Paris Porte de Châtillon",
                               address: "26 Rue de Châtillon, 75014 Paris, France",
-                              price_per_night: "€50-€70",
+                              price_per_night: "$50-$70",
                               image_url: "https://example.com/hotelf1_chatillon.jpg",
                               geo_coordinates: { latitude: 48.8252, longitude: 2.3278 },
                               rating: 6.8,
@@ -63,7 +63,7 @@ export const chatSession = model.startChat({
                             {
                               name: "Generator Paris",
                               address: "9 Place du Colonel Fabien, 75010 Paris, France",
-                              price_per_night: "€60-€80 (private room)",
+                              price_per_night: "$60-$80 (private room)",
                               image_url: "https://example.com/generator_paris.jpg",
                               geo_coordinates: { latitude: 48.8785, longitude: 2.3653 },
                               rating: 8.2,
@@ -83,7 +83,7 @@ export const chatSession = model.startChat({
                                   image_url: "https://example.com/eiffel_tower.jpg",
                                   geo_coordinates: { latitude: 48.8584, longitude: 2.2945 },
                                   ticket_pricing:
-                                    "Free to view from outside; approx. €10.50-€26.80 for summit access (book in advance!)",
+                                    "Free to view from outside; approx. $12-$30 for summit access (book in advance!)",
                                   rating: 9.5,
                                   best_time_to_visit:
                                     "Morning (9:00 AM – 11:00 AM) to avoid crowds, or evening for sunset/sparkling lights (hourly after dark)",
@@ -95,7 +95,7 @@ export const chatSession = model.startChat({
                                   image_url: "https://example.com/arc_de_triomphe.jpg",
                                   geo_coordinates: { latitude: 48.8738, longitude: 2.295 },
                                   ticket_pricing:
-                                    "Free to view from outside; approx. €13 to climb to the top",
+                                    "Free to view from outside; approx. $15 to climb to the top",
                                   rating: 9.0,
                                   best_time_to_visit:
                                     "Late morning (11:00 AM – 1:00 PM) or late afternoon (4:00 PM – 6:00 PM)",
@@ -113,7 +113,7 @@ export const chatSession = model.startChat({
                                   image_url: "https://example.com/louvre_museum.jpg",
                                   geo_coordinates: { latitude: 48.8606, longitude: 2.3376 },
                                   ticket_pricing:
-                                    "Approx. €17-€22 (online booking recommended)",
+                                    "Approx. $20-$25 (online booking recommended)",
                                   rating: 9.7,
                                   best_time_to_visit:
                                     "Early morning (9:00 AM – 10:00 AM) or Wednesday/Friday evenings (until 9:45 PM) for fewer crowds",

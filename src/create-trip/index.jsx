@@ -150,13 +150,6 @@ function CreateTrip() {
 
     // Generate AI-powered travel plan based on user inputs
     const OnGenerateTrip = async () => {
-        const user = localStorage.getItem('user');
-
-        if (!user) {
-            setOpenDialogue(true);
-            return;
-        }
-
         if (!formData.location ||!formData?.noOfDays || !formData?.budget || !formData?.traveler) {
             toast("Please fill all details.");
             return;
@@ -181,20 +174,55 @@ function CreateTrip() {
                 .replace('{traveler}', formData?.traveler)
                 .replace('{budget}', formData?.budget)
 
-            // Generate trip plan using Google Gemini AI with shorter timeout
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Request timeout - AI generation took too long')), 30000)
-            );
+            // Generate trip plan using Google Gemini AI
+            // Note: AI generation can take 30-60 seconds for complex trips
+            const result = await chatSession.sendMessage(FINAL_PROMPT);
             
-            const aiPromise = chatSession.sendMessage(FINAL_PROMPT);
-            const result = await Promise.race([aiPromise, timeoutPromise]);
+            console.log('Full AI Result:', result); // Debug log
+            
+            // Handle different response structures from Gemini API
+            let responseText = '';
+            if (result?.response?.text) {
+                // Standard response structure
+                responseText = result.response.text();
+            } else if (result?.response) {
+                // Try alternative response structure
+                const response = result.response;
+                if (response.candidates && response.candidates[0]?.content?.parts?.[0]?.text) {
+                    responseText = response.candidates[0].content.parts[0].text;
+                } else if (response.text) {
+                    responseText = typeof response.text === 'function' ? response.text() : response.text;
+                }
+            } else if (result?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                // Direct candidates structure
+                responseText = result.candidates[0].content.parts[0].text;
+            } else if (typeof result === 'string') {
+                // String response
+                responseText = result;
+            }
+            
+            if (!responseText || responseText.trim().length === 0) {
+                console.error('No valid response text found. Result structure:', result);
+                throw new Error('No response from AI. Please try again.');
+            }
+            
+            console.log('AI Response Text:', responseText); // Debug log
+            
+            // Clean the response - remove markdown code blocks if present
+            let cleanedResponse = responseText.trim();
+            if (cleanedResponse.startsWith('```json')) {
+                cleanedResponse = cleanedResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            } else if (cleanedResponse.startsWith('```')) {
+                cleanedResponse = cleanedResponse.replace(/```\n?/g, '').trim();
+            }
             
             setLoading(false);
-            SaveAiTrip(result?.response?.text());
+            SaveAiTrip(cleanedResponse);
         } catch (error) {
             setLoading(false);
             console.error('Error generating trip:', error);
-            toast.error(error.message || 'Failed to generate trip. Please try again.');
+            const errorMessage = error.message || 'Failed to generate trip. Please try again.';
+            toast.error(errorMessage);
         }
     }
 
@@ -214,20 +242,43 @@ function CreateTrip() {
     // Save generated trip to Firebase Firestore
     const SaveAiTrip = async (TripData) => {
         setLoading(true);
-        const user = JSON.parse(localStorage.getItem('user'));
-        const docId = Date.now().toString()
+        try {
+            // Get user if signed in (optional)
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            const docId = Date.now().toString()
 
-        await setDoc(doc(db, "AITrips", docId), {
-            userSelection: formData,
-            tripData: JSON.parse(TripData),
-            userEmail: user?.email,
-            id: docId,
-            imageCache: {
-                destinationImage: "/placeholder.jpg", 
-            },
-        });
-        setLoading(false);
-        navigate('/view-trip/' + docId)
+            // Parse JSON response
+            let parsedData;
+            try {
+                parsedData = JSON.parse(TripData);
+            } catch (parseError) {
+                console.error('Failed to parse AI response:', parseError);
+                console.error('Response text:', TripData);
+                throw new Error('Invalid response format from AI. Please try again.');
+            }
+
+            // Validate the structure
+            if (!parsedData.travel_plan) {
+                throw new Error('Invalid trip data structure. Please try again.');
+            }
+
+            await setDoc(doc(db, "AITrips", docId), {
+                userSelection: formData,
+                tripData: parsedData,
+                userEmail: user?.email || null, // Optional - null if not signed in
+                id: docId,
+                imageCache: {
+                    destinationImage: "/placeholder.jpg", 
+                },
+            });
+            setLoading(false);
+            navigate('/view-trip/' + docId)
+        } catch (error) {
+            setLoading(false);
+            console.error('Error saving trip:', error);
+            toast.error(error.message || 'Failed to save trip. Please try again.');
+        }
     }
 
     const getTravelerIcon = (iconName) => {

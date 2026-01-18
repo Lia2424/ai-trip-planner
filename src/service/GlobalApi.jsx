@@ -12,7 +12,10 @@ const config={
             'places.photos',
             'places.displayName',
             'places.id',
-            'places.formattedAddress'
+            'places.formattedAddress',
+            'places.rating',
+            'places.userRatingCount',
+            'places.addressComponents'
         ]
     }
 }

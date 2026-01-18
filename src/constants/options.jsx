@@ -50,4 +50,4 @@ export const SelectBudgetOptions=[
     },
 ]
 
-export const AI_PROMPT='Generate Travel Plan for the city of {location} for {totalDays} days for {traveler} travelers with a {budget} budget'
+export const AI_PROMPT='Generate Travel Plan for the city of {location} for {totalDays} days for {traveler} travelers with a {budget} budget. All prices must be in USD (US dollars) format like $50-$70 or $100 per person. Use $ symbol for all hotel prices and ticket pricing.'

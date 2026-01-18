@@ -65,17 +65,36 @@ export const getPlaceDetails = async (placeId) => {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'formattedAddress,name,geometry,id',
+        'X-Goog-FieldMask': 'formattedAddress,name,id,addressComponents,location',
       },
     });
 
     if (response.ok) {
       const place = await response.json();
+      
+      // Extract city and country from address components
+      let city = '';
+      let country = '';
+      
+      if (place.addressComponents) {
+        const cityComponent = place.addressComponents.find(
+          comp => comp.types.includes('locality') || comp.types.includes('administrative_area_level_1')
+        );
+        const countryComponent = place.addressComponents.find(
+          comp => comp.types.includes('country')
+        );
+        
+        city = cityComponent?.longText || cityComponent?.shortText || '';
+        country = countryComponent?.longText || countryComponent?.shortText || '';
+      }
+      
       return {
         formatted: place.formattedAddress || place.name?.text || 'Unknown',
         name: place.name?.text || 'Unknown',
         placeId: place.id || placeId,
-        geometry: place.geometry,
+        geometry: place.location || place.geometry, // Use location field from Places API (New)
+        city: city,
+        country: country,
       };
     } else {
       const errorData = await response.json().catch(() => ({}));
