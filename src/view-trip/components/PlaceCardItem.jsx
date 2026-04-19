@@ -50,14 +50,21 @@ function PlaceCardItem({place, city}) {
     : place.place_name;
 
   return (
-    <Link to={'https://www.google.com/maps/search/?api=1&query='+ encodeURIComponent(mapsQuery)} target='_blank' className='text-black'>
-    <div className='border rounded-xl p-3 mt-2 flex gap-5 hover:scale-105 transition-all cursor-pointer hover:shadow text-black'>
-    <img src={photoUrl?photoUrl:'/placeholder.jpg'} className='w-[130px] h-[130px] object-cover rounded-xl' />
-        <div className='flex gap-5'>
-            <h2 className='font-bold text-gray-200'>{place.place_name}</h2>
-            <p className='text-sm text-gray-300'>{place.details}</p>
-            <Button size="sm"><FaMapLocationDot />
-            Navigate</Button>
+    <Link to={'https://www.google.com/maps/search/?api=1&query='+ encodeURIComponent(mapsQuery)} target='_blank' className='block text-foreground'>
+    <div className='mt-2 flex flex-col gap-4 rounded-[24px] border border-white/10 bg-white/[0.04] p-3 transition-all hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.07] hover:shadow-warm md:flex-row md:items-center'>
+    <img src={photoUrl?photoUrl:'/placeholder.jpg'} className='h-[170px] w-full object-cover rounded-[20px] md:h-[130px] md:w-[130px]' />
+        <div className='flex flex-1 flex-col gap-3'>
+            <div>
+              <h2 className='font-bold text-foreground'>{place.place_name}</h2>
+              <p className='mt-2 text-sm text-white/65'>{place.details}</p>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs uppercase tracking-[0.22em] text-white/40">Open in maps</span>
+              <Button size="sm" className="shrink-0">
+                <FaMapLocationDot />
+                Navigate
+              </Button>
+            </div>
         </div>
     </div>
     </Link>

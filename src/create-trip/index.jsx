@@ -328,20 +328,22 @@ function CreateTrip() {
     };
 
     return (
-        <div className='container mx-auto px-4 lg:px-6 mt-10 max-w-4xl'>
-            <div className='bg-card border border-border rounded-xl p-6 md:p-8 shadow-lg'>
-            <h2
-              className='font-heading font-bold text-3xl md:text-4xl bg-clip-text text-transparent'
-              style={{ backgroundImage: 'var(--gradient)' }}
-            >
-              Tell us your travel information
-            </h2>
-            <p className='mt-3 text-muted-foreground text-lg'>Just provide some basic information and our trip planner will handle the rest!</p>
+        <div className='container mx-auto px-4 lg:px-6 mt-10 max-w-5xl pb-16'>
+            <div className='travel-card travel-grid relative overflow-hidden p-6 md:p-8 lg:p-10'>
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+            <div className="mb-8">
+              <span className="travel-kicker">Sunset planner</span>
+              <h2 className='font-heading font-bold text-3xl md:text-5xl mt-4 text-balance text-foreground'>
+                Tell us where you want to chase the
+                <span className='sunset-text'> next golden hour</span>
+              </h2>
+              <p className='mt-3 text-white/68 text-lg max-w-2xl'>Drop in a destination, choose your pace, and we’ll sketch a trip that feels warmer, calmer, and easier to browse.</p>
+            </div>
 
             <div className="relative w-full my-5" ref={inputContainerRef}>
                 <Input
                     type="text"
-                    placeholder="Search for a city"
+                    placeholder="Search for a city or destination"
                     value={query}
                     onChange={(e) => handleSearch(e.target.value)}
                     onFocus={() => {
@@ -350,13 +352,13 @@ function CreateTrip() {
                             handleSearch(query);
                         }
                     }}
-                    className="w-full bg-neutral-50 border-border shadow-sm text-gray-600 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none"
+                    className="h-14 w-full rounded-2xl border-white/12 bg-black/10 text-foreground placeholder:text-white/35 shadow-warm focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
                 />
 
                 {suggestions.length > 0 && (
                     <ul 
                         ref={suggestionsRef}
-                        className="absolute bg-popover text-popover-foreground border border-border rounded-md w-full mt-2 z-[100] shadow-md max-h-60 overflow-y-auto"
+                        className="absolute w-full mt-2 z-[100] max-h-60 overflow-y-auto rounded-2xl border border-white/12 bg-popover/95 text-popover-foreground shadow-warm-lg backdrop-blur-xl"
                         onMouseDown={(e) => {
                             // Prevent input blur when clicking on suggestions
                             e.preventDefault();
@@ -370,7 +372,7 @@ function CreateTrip() {
                                     e.stopPropagation();
                                     handleSelect(prediction);
                                 }}
-                                className="px-3 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer select-none active:bg-accent transition-colors"
+                                className="px-4 py-3 hover:bg-white/8 hover:text-accent-foreground cursor-pointer select-none active:bg-accent transition-colors"
                                 role="button"
                                 tabIndex={0}
                                 onKeyDown={(e) => {
@@ -393,21 +395,21 @@ function CreateTrip() {
             </div>
 
             {location && (
-                <p className="text-muted-foreground text-sm -my-4">
+                <p className="text-white/60 text-sm -my-2">
                     Selected: <strong>{location}</strong>
                 </p>
             )}
 
             <div className='mt-8 flex flex-col gap-8'>
                 <div>
-                    <h2 className='text-xl font-semibold mb-4 text-foreground'>How many days is your trip?</h2>
+                    <h2 className='text-xl font-semibold mb-4 text-foreground'>How many days are you staying?</h2>
                     <Input
                         placeholder={'Ex. 4'}
                         type="number"
                         min={1}
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        className="bg-white border-border shadow-sm text-gray-600 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none"
+                        className="h-14 rounded-2xl border-white/12 bg-black/10 text-foreground placeholder:text-white/35 shadow-warm focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
                         onKeyDown={(e) => {
                             if (["-", "+", "e", "E"].includes(e.key)) {
                                 e.preventDefault();
@@ -422,20 +424,19 @@ function CreateTrip() {
             </div>
 
             <div className='mt-12'>
-                <h2 className='text-xl font-semibold mb-4 text-foreground'>How many people are you travelling with?</h2>
+                <h2 className='text-xl font-semibold mb-4 text-foreground'>Who are you travelling with?</h2>
                 <div className='grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5'>
                     {SelectTravelersList.map((item, index) => (
                         <div key={index}
                             onClick={() => handleInputChange('traveler', item.people)}
-                            className={`p-6 border-2 border-border cursor-pointer 
-                        rounded-xl hover:shadow-lg hover:border-primary/50 transition-all
-                        ${formData?.traveler == item.people ? 'shadow-lg border-primary bg-primary/10' : 'bg-card'}
+                            className={`p-6 border cursor-pointer rounded-[24px] transition-all
+                        ${formData?.traveler == item.people ? 'border-primary bg-primary/12 shadow-warm-lg -translate-y-1' : 'border-white/10 bg-white/6 hover:border-white/20 hover:bg-white/8 hover:-translate-y-1'}
                         `}>
                             <div className='flex justify-center mb-3'>
                                 {getTravelerIcon(item.icon)}
                             </div>
-                            <h2 className='font-bold text-base text-center'>{item.title}</h2>
-                            <h2 className='text-xs text-muted-foreground mt-2 text-center'>{item.desc}</h2>
+                            <h2 className='font-bold text-base text-center text-foreground'>{item.title}</h2>
+                            <h2 className='text-xs text-white/60 mt-2 text-center'>{item.desc}</h2>
                         </div>
                     ))}
                 </div>
@@ -447,15 +448,14 @@ function CreateTrip() {
                     {SelectBudgetOptions.map((item, index) => (
                         <div key={index}
                             onClick={() => handleInputChange('budget', item.title)}
-                            className={`p-6 border-2 border-border cursor-pointer
-                        rounded-xl hover:shadow-lg hover:border-primary/50 transition-all
-                        ${formData?.budget == item.title ? 'shadow-lg border-primary bg-primary/10' : 'bg-card'}
+                            className={`p-6 border cursor-pointer rounded-[24px] transition-all
+                        ${formData?.budget == item.title ? 'border-primary bg-primary/12 shadow-warm-lg -translate-y-1' : 'border-white/10 bg-white/6 hover:border-white/20 hover:bg-white/8 hover:-translate-y-1'}
                         `}>
                             <div className='flex justify-center mb-3'>
                                 {getBudgetIcon(item.icon)}
                             </div>
-                            <h2 className='font-bold text-lg text-center'>{item.title}</h2>
-                            <h2 className='text-sm text-muted-foreground mt-2 text-center'>{item.desc}</h2>
+                            <h2 className='font-bold text-lg text-center text-foreground'>{item.title}</h2>
+                            <h2 className='text-sm text-white/60 mt-2 text-center'>{item.desc}</h2>
                         </div>
                     ))}
                 </div>
@@ -464,17 +464,17 @@ function CreateTrip() {
             <div className='my-10 justify-center flex'>
                 <Button 
                     size="lg"
-                    className='text-lg py-6 px-12 font-semibold'
+                    className='text-lg py-6 px-12 font-semibold min-w-52'
                     disabled={loading}
                     onClick={OnGenerateTrip}>
                     {loading ?
-                        <AiOutlineLoading3Quarters className='h-7 w-7 animate-spin' /> : 'Generate Trip'
+                        <AiOutlineLoading3Quarters className='h-7 w-7 animate-spin' /> : 'Generate Sunset Plan'
                     }
                 </Button>
             </div>
 
             <Dialog open={openDialogue} onOpenChange={setOpenDialogue}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md travel-surface border-white/12">
                     <DialogHeader>
                         <DialogTitle className="sr-only">Sign In</DialogTitle>
                         <DialogDescription className="space-y-6">
@@ -488,7 +488,7 @@ function CreateTrip() {
                             <div className="space-y-4 text-center">
                                 <div>
                                     <h2 className='font-semibold text-lg text-foreground mb-2'>Sign In With Google</h2>
-                                    <p className='text-sm text-muted-foreground'>Sign in to save and manage your trips</p>
+                                    <p className='text-sm text-white/65'>Sign in to save and manage your trips</p>
                                 </div>
                                 <Button
                                     onClick={login}

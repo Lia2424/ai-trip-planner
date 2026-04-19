@@ -98,24 +98,30 @@ function InfoSection({ trip }) {
   }, [trip, GetPlacePhoto])
 
   return (
-    <div>
-      <img src={photoUrl} className='h-[340px] w-full object-cover rounded-xl'/>
+    <div className="travel-card overflow-hidden">
+      <div className="relative">
+        <img src={photoUrl} className='h-[340px] w-full object-cover'/>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#091223]/90 via-[#091223]/25 to-transparent" />
+        <div className="absolute left-6 top-6">
+          <span className="travel-kicker">Sunset itinerary</span>
+        </div>
+      </div>
       
-      <div className='flex justify-between items-center'>
-        <div className='my-5 flex flex-col gap-3'>
+      <div className='flex flex-col gap-6 p-6 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-3'>
           {city && country ? (
-            <h2 className='font-bold text-2xl text-foreground'>{city.trim()}, {country.trim()}</h2>
+            <h2 className='font-bold text-2xl md:text-3xl text-foreground'>{city.trim()}, {country.trim()}</h2>
           ) : (
-            <h2 className='font-bold text-2xl text-foreground'>{trip?.tripData?.travel_plan?.location || trip?.userSelection?.location}</h2>
+            <h2 className='font-bold text-2xl md:text-3xl text-foreground'>{trip?.tripData?.travel_plan?.location || trip?.userSelection?.location}</h2>
           )}
           <div className='flex gap-3 flex-wrap'>
-            <div className='px-3 py-1.5 bg-muted border border-border rounded-full text-foreground font-medium text-sm'>
+            <div className='px-3 py-1.5 rounded-full border border-white/10 bg-white/6 text-foreground font-medium text-sm'>
               📅 {trip.userSelection?.noOfDays} day(s)
             </div>
-            <div className='px-3 py-1.5 bg-muted border border-border rounded-full text-foreground font-medium text-sm'>
+            <div className='px-3 py-1.5 rounded-full border border-white/10 bg-white/6 text-foreground font-medium text-sm'>
               👤 {trip.userSelection?.traveler}
             </div>
-            <div className='px-3 py-1.5 bg-muted border border-border rounded-full text-foreground font-medium text-sm'>
+            <div className='px-3 py-1.5 rounded-full border border-white/10 bg-white/6 text-foreground font-medium text-sm'>
               💵 {trip.userSelection?.budget}
             </div>
           </div>
@@ -131,7 +137,7 @@ function InfoSection({ trip }) {
           <PopoverContent
             side="bottom"
             align="end"
-            className="w-[280px] flex flex-col items-center text-sm p-5"
+            className="travel-surface w-[280px] flex flex-col items-center text-sm p-5 border-white/12"
           >
             <h3 className="font-semibold mb-5 text-foreground">Share this trip</h3>
 

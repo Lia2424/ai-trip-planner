@@ -60,16 +60,14 @@ function MyTrips() {
     };
 
     return (
-        <div className='container mx-auto px-4 lg:px-6 mt-10 max-w-7xl'>
-            <h2
-              className='font-bold text-3xl bg-clip-text text-transparent'
-              style={{ backgroundImage: 'var(--gradient)' }}
-            >
-              My Trips
+        <div className='container mx-auto px-4 lg:px-6 mt-10 max-w-7xl pb-16'>
+            <span className='travel-kicker'>Saved escapes</span>
+            <h2 className='mt-4 font-bold text-3xl md:text-4xl text-foreground'>
+              Your <span className='sunset-text'>sunset-themed</span> trip library
             </h2>
 
             {error && (
-                <div className='mt-5 p-4 bg-destructive/10 border border-destructive/20 rounded-lg'>
+                <div className='mt-5 p-4 bg-destructive/10 border border-destructive/20 rounded-2xl'>
                     <p className='text-destructive'>{error}</p>
                     <button 
                         onClick={GetUserTrips}
@@ -83,7 +81,7 @@ function MyTrips() {
             {loading ? (
                 <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mt-5 gap-5'>
                     {[1,2,3,4,5,6].map((item, index)=>(
-                        <div key={index} className='h-[220px] w-full bg-slate-200 animate-pulse rounded-xl'>
+                        <div key={index} className='h-[280px] w-full animate-pulse rounded-[28px] border border-white/10 bg-white/6'>
                         </div>
                     ))}
                 </div>
@@ -94,8 +92,8 @@ function MyTrips() {
                     ))}
                 </div>
             ) : (
-                <div className='mt-10 text-center py-10'>
-                    <p className='text-muted-foreground text-lg'>No trips found. Start planning your first trip!</p>
+                <div className='mt-10 text-center py-10 travel-card'>
+                    <p className='text-white/70 text-lg'>No trips found yet. Start planning your first escape.</p>
                 </div>
             )}
         </div>

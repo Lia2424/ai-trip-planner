@@ -93,14 +93,16 @@ function HotelCardItem({ hotel, city }) {
 
   return (
     <Link to={'https://www.google.com/maps/search/?api=1&query='+ hotel.name + "," + hotel?.address} target='_blank' className='text-foreground'>
-                <div className='hover:scale-105 transition-all cursor-pointer'>
-                    <img src={photoUrl?photoUrl:'/placeholder.jpg'} className="rounded-xl h-[200px] w-full object-cover"/>                    
-                    <div className='my-2 flex flex-col gap-2'>
-                        <h2 className='font-medium text-foreground'>{hotel?.name}</h2>
-                        <h2 className='text-xs text-muted-foreground'>📍 {hotel?.address}</h2>
-                        <div className='flex items-center gap-4 mt-1'>
-                            <h2 className='text-sm font-semibold text-foreground'>💵 {formatPrice(hotel?.price_per_night)} per night</h2>
-                            <h2 className='text-sm font-semibold text-foreground'>
+                <div className='travel-card overflow-hidden transition-all cursor-pointer hover:-translate-y-1 hover:border-white/20 hover:shadow-warm-lg'>
+                    <img src={photoUrl?photoUrl:'/placeholder.jpg'} className="h-[210px] w-full object-cover"/>                    
+                    <div className='p-4 flex flex-col gap-3'>
+                        <div>
+                          <h2 className='font-medium text-foreground'>{hotel?.name}</h2>
+                          <h2 className='mt-2 text-xs text-white/60'>📍 {hotel?.address}</h2>
+                        </div>
+                        <div className='flex flex-wrap items-center gap-3 mt-1 text-sm'>
+                            <h2 className='font-semibold rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-foreground'>💵 {formatPrice(hotel?.price_per_night)} per night</h2>
+                            <h2 className='font-semibold rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-foreground'>
                                 ⭐ {googleRating !== null ? googleRating.toFixed(1) : hotel?.rating || 'N/A'} {googleRating !== null ? '(Google)' : 'stars'}
                             </h2>
                         </div>

@@ -55,17 +55,22 @@ function Header() {
     }
 
     return (
-        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto px-4 lg:px-6">
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center space-x-2 flex-1">
-                        <Link to="/" className="flex items-center space-x-2">
-                            <Plane className="h-8 w-8 text-primary" />
-                            <span className="font-bold text-xl">TripKitAI</span>
+                        <Link to="/" className="flex items-center space-x-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/8 shadow-warm">
+                                <Plane className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="flex flex-col leading-none">
+                                <span className="font-bold text-base text-foreground">TripKitAI</span>
+                                <span className="text-[11px] uppercase tracking-[0.22em] text-white/45">Sunset routes</span>
+                            </div>
                         </Link>
                     </div>
                     <nav className="hidden md:flex items-center space-x-6 text-sm font-medium flex-1 justify-end mr-4">
-                        <Link to="/faq" className="text-foreground/60 hover:text-foreground transition-colors">
+                        <Link to="/faq" className="text-white/60 hover:text-white transition-colors">
                             FAQ
                         </Link>
                     </nav>
@@ -73,12 +78,12 @@ function Header() {
                         {user ? (
                             <div className='flex items-center gap-3'>
                                 <Link to='/create-trip'>
-                                    <Button size="sm" variant="ghost">
+                                    <Button size="sm" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
                                         Create Trip
                                     </Button>
                                 </Link>
                                 <Link to='/my-trips'>
-                                    <Button size="sm" variant="ghost">
+                                    <Button size="sm" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
                                         My Trips
                                     </Button>
                                 </Link>
@@ -86,10 +91,10 @@ function Header() {
                                     <PopoverTrigger asChild>
                                         <img src={user?.picture}
                                             alt="profile"
-                                            className='w-8 h-8 rounded-full object-cover cursor-pointer' />
+                                            className='w-9 h-9 rounded-full object-cover cursor-pointer ring-2 ring-white/15' />
                                     </PopoverTrigger>
-                                    <PopoverContent>
-                                        <h2 className='cursor-pointer'
+                                    <PopoverContent className="travel-surface border-white/12">
+                                        <h2 className='cursor-pointer text-foreground'
                                             onClick={() => {
                                                 googleLogout();
                                                 localStorage.clear();
@@ -100,7 +105,7 @@ function Header() {
                             </div>
                         ) : (
                             <>
-                                <Button size="sm" variant="ghost" onClick={() => setOpenDialogue(true)}>
+                                <Button size="sm" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10" onClick={() => setOpenDialogue(true)}>
                                     Sign In
                                 </Button>
                                 <Link to="/create-trip">
@@ -112,7 +117,7 @@ function Header() {
                 </div>
             </div>
             <Dialog open={openDialogue} onOpenChange={setOpenDialogue}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md travel-surface border-white/12">
                     <DialogHeader>
                         <DialogTitle className="sr-only">Sign In</DialogTitle>
                         <DialogDescription className="space-y-6">
@@ -126,7 +131,7 @@ function Header() {
                             <div className="space-y-4 text-left">
                                 <div>
                                     <h2 className='font-semibold text-lg text-foreground mb-2'>Sign In With Google</h2>
-                                    <p className='text-sm text-muted-foreground'>Sign in to save and manage your trips</p>
+                                    <p className='text-sm text-white/65'>Sign in to save and manage your trips</p>
                                 </div>
                                 <Button
                                     onClick={login}

@@ -65,19 +65,19 @@ function UserTripCardItem({trip}) {
 
   return (
     <Link to={'/view-trip/' + trip?.id}>
-    <div className='hover:scale-105 transition-all cursor-pointer'>
-    <div className='aspect-square w-full overflow-hidden rounded-xl'>
+    <div className='travel-card overflow-hidden transition-all cursor-pointer hover:-translate-y-1 hover:border-white/20 hover:shadow-warm-lg'>
+    <div className='aspect-square w-full overflow-hidden'>
       <img
         src={photoUrl?photoUrl:'/placeholder.jpg'}
         className='w-full h-full object-cover'
         alt={trip?.tripData?.travel_plan?.location}
       />
     </div>
-        <div className='mt-3'>
+        <div className='p-4'>
             <h2 className='font-bold text-lg text-foreground'>
               {city && country ? `${city.trim()}, ${country.trim()}` : trip?.tripData?.travel_plan?.location}
             </h2>
-            <h2 className='text-sm text-muted-foreground'>{trip?.userSelection?.noOfDays} day trip</h2>
+            <h2 className='mt-2 text-sm text-white/60'>{trip?.userSelection?.noOfDays} day trip</h2>
         </div>
     </div>
     </Link>

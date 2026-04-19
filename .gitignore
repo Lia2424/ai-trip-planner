@@ -27,3 +27,7 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Local docs
+deployment.md
+DEPLOYMENT.md
