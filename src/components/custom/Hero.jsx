@@ -1,74 +1,47 @@
-import React from 'react'
+import { createElement } from 'react'
+import { Link } from 'react-router-dom'
+import { ArrowUpRight, ArrowRight, Compass, MapPin, Route, Bookmark, MoveDown } from 'lucide-react'
 import { Button } from '../ui/button'
-import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, LogIn, MapPin, Clock3, Camera } from 'lucide-react'
+import TravelImage from './TravelImage'
 
-function Hero() {
-  const navigate = useNavigate();
-  
-  // Navigate to create trip page with sign-in prompt
-  const handleSignInClick = () => {
-    navigate('/create-trip?signin=true');
-  };
+const destinations = [
+  { name: 'Kyoto', country: 'Japan', note: 'Quiet gardens & winding lanes', image: 'photo-1493976040374-85c8e12f0c0e' },
+  { name: 'The Dolomites', country: 'Italy', note: 'Alpine trails & fresh perspectives', image: 'photo-1464822759023-fed622ff2c3b' },
+  { name: 'Bali', country: 'Indonesia', note: 'Island mornings & a slower pace', image: 'photo-1537996194471-e657df975ab4' },
+]
+const photo = (id, width = 800) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=85`
 
-  return (
-    <section className="relative overflow-hidden h-full flex items-center justify-center py-8 md:py-10">
-      <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#ffd37a]/20 via-[#ff8f6b]/10 to-transparent" />
-      <div className="absolute -top-20 left-[12%] h-56 w-56 rounded-full bg-[#ffd37a]/20 blur-3xl" />
-      <div className="absolute top-[18%] right-[12%] h-64 w-64 rounded-full bg-[#b88cff]/18 blur-3xl" />
-      <div className="absolute bottom-[-10%] left-1/2 h-72 w-[78%] -translate-x-1/2 rounded-full bg-gradient-to-t from-[#ff8f6b]/28 via-[#b88cff]/18 to-transparent blur-3xl" />
-      <div className="container mx-auto px-4 lg:px-6 relative z-10 w-full">
-        <div className="mx-auto flex max-w-5xl flex-col items-center text-center space-y-6 md:space-y-7">
-          <div className="travel-card travel-grid relative w-full max-w-5xl overflow-hidden px-6 py-10 md:px-12 md:py-14">
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-            <div className="flex flex-col items-center gap-6">
-              <span className="travel-kicker">For slow, beautiful escapes</span>
-              <h1 className="font-heading text-4xl md:text-6xl font-bold tracking-tight max-w-4xl text-balance text-foreground">
-                Travel plans with a
-                <span className="sunset-text"> sunset state-of-mind </span>
-                and room to wander.
-              </h1>
-              
-              <p className="text-lg md:text-xl text-white/72 max-w-2xl leading-relaxed text-balance">
-                From city breaks to longer getaways, TripKitAI helps shape thoughtful itineraries that feel calm, curated, and easy to explore.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <Link to="/create-trip">
-                  <Button size="lg" className="px-8 group">
-                    Start Planning
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                  </Button>
-                </Link>
-                <Button size="lg" variant="outline" className="px-8 group border-white/15 bg-white/6 text-white hover:bg-white/10" onClick={handleSignInClick}>
-                  Sign In to Save Your Trips
-                  <LogIn className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                </Button>
-              </div>
-
-              <div className="grid w-full gap-3 pt-4 text-left md:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                  <MapPin className="mb-3 h-4 w-4 text-[#ffd37a]" />
-                  <p className="text-sm font-semibold text-foreground">Beautiful destinations</p>
-                  <p className="mt-1 text-sm text-white/65">Browse trips centered around places you actually want to linger in.</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                  <Clock3 className="mb-3 h-4 w-4 text-[#ff8f6b]" />
-                  <p className="text-sm font-semibold text-foreground">Easy pacing</p>
-                  <p className="mt-1 text-sm text-white/65">Each plan flows naturally, with enough structure to guide the day.</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                  <Camera className="mb-3 h-4 w-4 text-[#b88cff]" />
-                  <p className="text-sm font-semibold text-foreground">Moments worth sharing</p>
-                  <p className="mt-1 text-sm text-white/65">Save and share polished trip pages with friends, partners, or travel groups.</p>
-                </div>
-              </div>
-            </div>
-          </div>
+export default function Hero() {
+  return <>
+    <section className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-10 md:grid-cols-2 md:gap-12 md:px-8 md:py-16 lg:gap-20">
+      <div className="py-3 lg:py-10">
+        <span className="travel-kicker"><span className="h-2 w-2 rounded-full bg-[#ba6649]" /> A little curiosity. A whole world.</span>
+        <h1 className="mt-6 font-heading text-5xl leading-[1.06] sm:text-6xl lg:text-[76px]">Less planning.<br />More <em className="font-normal text-primary">getting lost.</em></h1>
+        <p className="mt-6 max-w-md text-base text-muted-foreground md:text-lg">The good kind, of course. Turn your next “what if” into a personal itinerary, with places to stay and days worth remembering.</p>
+        <div className="mt-8 flex flex-wrap items-center gap-5">
+          <Button asChild size="lg" className="h-12 rounded-full px-6"><Link to="/create-trip">Plan my adventure <ArrowUpRight /></Link></Button>
+          <a href="#inspiration" className="inline-flex items-center gap-2 text-sm font-medium underline-offset-4 hover:underline">Find inspiration <MoveDown size={15} /></a>
         </div>
+        <div className="mt-9 flex items-center gap-3 border-t border-border pt-5 text-sm text-muted-foreground"><Compass size={20} className="text-primary" /> Your destination. Your budget. Your kind of trip.</div>
+      </div>
+      <div className="relative pb-6 pl-3 md:pl-0">
+        <div className="relative overflow-hidden rounded-t-[160px] rounded-b-2xl bg-primary sm:rounded-t-[220px]">
+          <TravelImage src={photo('photo-1516483638261-f4dbaf036963', 1200)} alt="Colorful coastal homes overlooking the Mediterranean in Cinque Terre, Italy" loading="eager" className="h-[390px] w-full object-cover sm:h-[500px] lg:h-[580px]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute bottom-20 left-7 text-white"><p className="text-[10px] uppercase tracking-[0.25em]">Somewhere you could be</p><p className="mt-1 flex items-center gap-2 text-lg"><MapPin size={17} /> Cinque Terre, Italy</p></div>
+        </div>
+        <div className="absolute -left-2 bottom-0 flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 shadow-warm-lg md:-left-6"><div className="rounded-full bg-secondary p-3"><Route size={21} /></div><div><p className="text-sm font-semibold">A trip that feels like you.</p><p className="text-xs text-muted-foreground">A little structure. Room to wander.</p></div></div>
       </div>
     </section>
-  )
+    <section className="border-y border-border bg-secondary/50">
+      <div className="mx-auto grid max-w-7xl gap-7 px-5 py-8 sm:grid-cols-3 md:px-8">
+        {[ [Compass, 'Start with a place', 'A city you love. A place you’ve never been.'], [Route, 'Make it your own', 'Set your pace, budget, and travel crew.'], [Bookmark, 'Keep the possibilities', 'Sign in to keep your trips in one place.'] ].map(([Icon, title, description], i) => <div key={title} className="flex items-start gap-4">{createElement(Icon, { className: 'mt-1 shrink-0 text-primary', size: 23 })}<div><p className="text-sm font-semibold"><span className="mr-2 text-muted-foreground">0{i + 1}</span>{title}</p><p className="mt-1 text-sm text-muted-foreground">{description}</p></div></div>)}
+      </div>
+    </section>
+    <section id="inspiration" className="mx-auto max-w-7xl scroll-mt-28 px-5 py-14 md:px-8 md:py-20">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><span className="travel-kicker">The world is calling</span><h2 className="section-heading mt-3">Where will curiosity take you?</h2></div><p className="max-w-xs text-sm text-muted-foreground">A few ideas for your next chapter.<br />Choose a place, then make it yours.</p></div>
+      <div className="grid gap-6 sm:grid-cols-3">{destinations.map(destination => <Link key={destination.name} to={`/create-trip?destination=${encodeURIComponent(destination.name + ', ' + destination.country)}`} className="destination-card group"><div className="relative aspect-[4/3] overflow-hidden rounded-2xl"><TravelImage src={photo(destination.image)} alt={`${destination.name}, ${destination.country}`} className="h-full w-full object-cover" /><span className="absolute left-4 top-4 rounded-full bg-card px-3 py-1 text-xs font-medium">{destination.country}</span></div><div className="mt-4 flex items-center justify-between"><h3 className="font-heading text-2xl">{destination.name}</h3><ArrowUpRight size={20} className="text-primary" /></div><p className="mt-1 text-sm text-muted-foreground">{destination.note}</p></Link>)}</div>
+      <div className="mt-14 flex flex-col items-start justify-between gap-5 rounded-2xl bg-primary px-7 py-8 text-primary-foreground sm:flex-row sm:items-center md:px-10"><div><h2 className="font-heading text-3xl">Your next chapter starts here.</h2><p className="mt-2 text-sm text-white/80">Bring the daydream. We’ll help with the details.</p></div><Button asChild variant="secondary" className="rounded-full"><Link to="/create-trip">Let’s make a plan <ArrowRight /></Link></Button></div>
+    </section>
+  </>
 }
-
-export default Hero

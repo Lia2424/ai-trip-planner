@@ -10,8 +10,9 @@ function HotelSection({trip}) {
       
   return (
     <div>
-        <h2 className='font-bold text-xl mt-5 mb-5'>Hotel Recommendation</h2>
-        <div className='grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4'>
+        <h2 className='section-heading mt-10 mb-5'>Somewhere to unwind</h2>
+        {!trip?.tripData?.travel_plan?.hotels?.length && <p className='travel-card p-6 text-muted-foreground'>No hotel suggestions were included in this itinerary.</p>}
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
             {trip?.tripData?.travel_plan?.hotels?.map((hotel)=>(
                 <HotelCardItem key={hotel.name} hotel={hotel} city={city}/>
             ))}

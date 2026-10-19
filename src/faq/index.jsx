@@ -8,19 +8,19 @@ import {
 
 function FAQ() {
   return (
-    <section id="faq" className="py-20 md:py-32">
+    <section id="faq" className="py-12 md:py-20">
       <div className="container mx-auto px-4 lg:px-6">
         <div className="text-center space-y-4 mb-16">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold">
-            Frequently Asked Questions
-          </h2>
+          <h1 className="font-heading text-3xl md:text-4xl font-bold">
+            A little help along the way.
+          </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Everything you need to know about our AI Travel Planner
           </p>
         </div>
         <div className="max-w-3xl mx-auto">
           <Accordion type="single" className="space-y-2" collapsible>
-            <AccordionItem value="item-2" className="border-b-0">
+            <AccordionItem value="item-2" className="travel-card px-5">
               <AccordionTrigger className="text-left font-semibold text-foreground py-4 hover:no-underline">
                 Do I need to create an account to use the travel planner?
               </AccordionTrigger>
@@ -29,7 +29,7 @@ function FAQ() {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="item-4" className="border-b-0">
+            <AccordionItem value="item-4" className="travel-card px-5">
               <AccordionTrigger className="text-left font-semibold text-foreground py-4 hover:no-underline">
                 Can I share my travel itinerary with others?
               </AccordionTrigger>
@@ -38,7 +38,7 @@ function FAQ() {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="item-6" className="border-b-0">
+            <AccordionItem value="item-6" className="travel-card px-5">
               <AccordionTrigger className="text-left font-semibold text-foreground py-4 hover:no-underline">
                 Is there a limit to how many trips I can create?
               </AccordionTrigger>
@@ -47,7 +47,7 @@ function FAQ() {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="item-7" className="border-b-0">
+            <AccordionItem value="item-7" className="travel-card px-5">
               <AccordionTrigger className="text-left font-semibold text-foreground py-4 hover:no-underline">
                 Can I modify or edit a travel plan after it's created?
               </AccordionTrigger>
@@ -56,7 +56,7 @@ function FAQ() {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="item-9" className="border-b-0">
+            <AccordionItem value="item-9" className="travel-card px-5">
               <AccordionTrigger className="text-left font-semibold text-foreground py-4 hover:no-underline">
                 What destinations are supported?
               </AccordionTrigger>
@@ -65,7 +65,7 @@ function FAQ() {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="item-10" className="border-b-0">
+            <AccordionItem value="item-10" className="travel-card px-5">
               <AccordionTrigger className="text-left font-semibold text-foreground py-4 hover:no-underline">
                 Is the service free to use?
               </AccordionTrigger>

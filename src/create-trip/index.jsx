@@ -22,13 +22,52 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getPlacePredictions, getPlaceDetails } from '@/service/GooglePlacesService';
 import { User, Users, UsersRound, DollarSign, Wallet, Sparkles, Zap } from 'lucide-react';
 
+const getGenerationError = (error) => {
+    const rawMessage = String(error?.message || error || '');
+
+    if (/\b402\b|prepayment credits|billing/i.test(rawMessage)) {
+        return {
+            title: 'Trip generation is temporarily unavailable.',
+            description: 'The Gemini API project has no remaining credits. Add credits in Google AI Studio, then try again.',
+            showBillingLink: true,
+        };
+    }
+
+    if (/\b429\b|quota|rate limit/i.test(rawMessage)) {
+        return {
+            title: 'The trip planner is busy right now.',
+            description: 'The AI usage limit has been reached. Wait a moment and try again.',
+            showBillingLink: false,
+        };
+    }
+
+    if (/api key|permission|unauthorized|forbidden|\b401\b|\b403\b/i.test(rawMessage)) {
+        return {
+            title: 'Trip generation is not configured correctly.',
+            description: 'Check the Gemini API key and project permissions, then try again.',
+            showBillingLink: false,
+        };
+    }
+
+    return {
+        title: 'We couldn’t create this trip.',
+        description: 'Please check your connection and try again in a moment.',
+        showBillingLink: false,
+    };
+};
+
 function CreateTrip() {
-    const [location, setLocation] = useState();
-    const [formData, setFormData] = useState([]);
     const [searchParams] = useSearchParams();
+    const destinationParam = searchParams.get('destination')?.trim() || '';
+    const [location, setLocation] = useState(destinationParam || undefined);
+    const [formData, setFormData] = useState(() => destinationParam
+        ? { location: destinationParam }
+        : {}
+    );
     const [openDialogue, setOpenDialogue] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [query, setQuery] = useState("");
+    const [generationError, setGenerationError] = useState(null);
+    const [query, setQuery] = useState(destinationParam);
     const [suggestions, setSuggestions] = useState([]);
 
     const debounceRef = useRef(null);
@@ -74,6 +113,8 @@ function CreateTrip() {
     // Handle location search with debouncing to reduce API calls
     const handleSearch = (text) => {
         setQuery(text);
+        setLocation(undefined);
+        setFormData(prev => ({ ...prev, location: '', city: '', country: '' }));
 
         if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -100,7 +141,7 @@ function CreateTrip() {
             const formatted = placeDetails.formatted || prediction.description || "Unknown";
             const city = placeDetails.city || "";
             const country = placeDetails.country || "";
-            
+
             // Format display: "City, Country" or just formatted address
             const displayLocation = city && country ? `${city}, ${country}` : formatted;
 
@@ -122,7 +163,7 @@ function CreateTrip() {
             setSuggestions([]);
             setFormData((prev) => ({
                 ...prev,
-                location: formatted,                  
+                location: formatted,
             }));
         }
     };
@@ -165,9 +206,10 @@ function CreateTrip() {
             return;
         }
 
+        setGenerationError(null);
         setLoading(true);
         const loadingToast = toast.loading("Generating your trip plan... This may take 30-60 seconds.");
-        
+
         try {
             // Build AI prompt with user preferences
             const FINAL_PROMPT = AI_PROMPT
@@ -178,18 +220,18 @@ function CreateTrip() {
 
             // Generate trip plan using Google Gemini AI with timeout
             // Note: AI generation can take 30-60 seconds for complex trips
-            const timeoutPromise = new Promise((_, reject) => 
+            const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Request timeout. The AI is taking too long. Please try again.')), 90000)
             );
-            
+
             const aiPromise = chatSession.sendMessage(FINAL_PROMPT);
             const result = await Promise.race([aiPromise, timeoutPromise]);
-            
+
             toast.dismiss(loadingToast);
             toast.success("Trip plan generated successfully!");
-            
+
             console.log('Full AI Result:', result); // Debug log
-            
+
             // Handle different response structures from Gemini API
             let responseText = '';
             if (result?.response?.text) {
@@ -210,14 +252,14 @@ function CreateTrip() {
                 // String response
                 responseText = result;
             }
-            
+
             if (!responseText || responseText.trim().length === 0) {
                 console.error('No valid response text found. Result structure:', result);
                 throw new Error('No response from AI. Please try again.');
             }
-            
+
             console.log('AI Response Text:', responseText); // Debug log
-            
+
             // Clean the response - remove markdown code blocks if present
             let cleanedResponse = responseText.trim();
             if (cleanedResponse.startsWith('```json')) {
@@ -225,14 +267,18 @@ function CreateTrip() {
             } else if (cleanedResponse.startsWith('```')) {
                 cleanedResponse = cleanedResponse.replace(/```\n?/g, '').trim();
             }
-            
+
             await SaveAiTrip(cleanedResponse);
         } catch (error) {
             toast.dismiss(loadingToast);
             setLoading(false);
             console.error('Error generating trip:', error);
-            const errorMessage = error.message || 'Failed to generate trip. Please try again.';
-            toast.error(errorMessage);
+            const friendlyError = getGenerationError(error);
+            setGenerationError(friendlyError);
+            toast.error(friendlyError.title, {
+                description: friendlyError.description,
+                duration: 10000,
+            });
         }
     }
 
@@ -256,7 +302,7 @@ function CreateTrip() {
     // Save generated trip to Firebase Firestore
     const SaveAiTrip = async (TripData) => {
         const saveToast = toast.loading("Saving your trip...");
-        
+
         try {
             // Get user if signed in (optional)
             const userStr = localStorage.getItem('user');
@@ -279,22 +325,22 @@ function CreateTrip() {
             }
 
             // Add timeout for Firestore save
-            const saveTimeoutPromise = new Promise((_, reject) => 
+            const saveTimeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Save timeout. Please try again.')), 10000)
             );
-            
+
             const savePromise = setDoc(doc(db, "AITrips", docId), {
                 userSelection: formData,
                 tripData: parsedData,
                 userEmail: user?.email || null, // Optional - null if not signed in
                 id: docId,
                 imageCache: {
-                    destinationImage: "/placeholder.jpg", 
+                    destinationImage: "/placeholder.jpg",
                 },
             });
-            
+
             await Promise.race([savePromise, saveTimeoutPromise]);
-            
+
             toast.dismiss(saveToast);
             setLoading(false);
             toast.success("Trip saved successfully!");
@@ -328,37 +374,37 @@ function CreateTrip() {
     };
 
     return (
-        <div className='container mx-auto px-4 lg:px-6 mt-10 max-w-5xl pb-16'>
-            <div className='travel-card travel-grid relative overflow-hidden p-6 md:p-8 lg:p-10'>
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+        <div className='page-shell max-w-4xl'>
+            <div className='travel-card relative p-6 md:p-8 lg:p-10'>
+
             <div className="mb-8">
-              <span className="travel-kicker">Sunset planner</span>
-              <h2 className='font-heading font-bold text-3xl md:text-5xl mt-4 text-balance text-foreground'>
-                Tell us where you want to chase the
-                <span className='sunset-text'> next golden hour</span>
-              </h2>
-              <p className='mt-3 text-white/68 text-lg max-w-2xl'>Drop in a destination, choose your pace, and we’ll sketch a trip that feels warmer, calmer, and easier to browse.</p>
+              <span className="travel-kicker">Let’s go somewhere</span>
+              <h1 className='font-heading text-4xl md:text-5xl mt-4 text-balance'>Your next adventure,<br /><em className='font-normal text-primary'>made personal.</em></h1>
+              <p className='mt-3 text-muted-foreground text-lg max-w-2xl'>A few details are all it takes. We’ll bring together places to stay, things to see, and a day-by-day plan that fits you.</p>
             </div>
 
             <div className="relative w-full my-5" ref={inputContainerRef}>
+                <label htmlFor="destination" className="form-label">01 — Where are you dreaming of?</label>
                 <Input
+                    id="destination"
+                    autoComplete="off"
                     type="text"
                     placeholder="Search for a city or destination"
                     value={query}
                     onChange={(e) => handleSearch(e.target.value)}
                     onFocus={() => {
                         // Keep suggestions open when input is focused
-                        if (query.length >= 2 && suggestions.length === 0) {
+                        if (!location && query.length >= 2 && suggestions.length === 0) {
                             handleSearch(query);
                         }
                     }}
-                    className="h-14 w-full rounded-2xl border-white/12 bg-black/10 text-foreground placeholder:text-white/35 shadow-warm focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
+                    className="h-14 w-full rounded-2xl border-border bg-background text-foreground placeholder:text-muted-foreground shadow-warm focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
                 />
 
                 {suggestions.length > 0 && (
-                    <ul 
+                    <ul
                         ref={suggestionsRef}
-                        className="absolute w-full mt-2 z-[100] max-h-60 overflow-y-auto rounded-2xl border border-white/12 bg-popover/95 text-popover-foreground shadow-warm-lg backdrop-blur-xl"
+                        className="absolute w-full mt-2 z-[100] max-h-60 overflow-y-auto rounded-2xl border border-border bg-popover/95 text-popover-foreground shadow-warm-lg "
                         onMouseDown={(e) => {
                             // Prevent input blur when clicking on suggestions
                             e.preventDefault();
@@ -372,7 +418,7 @@ function CreateTrip() {
                                     e.stopPropagation();
                                     handleSelect(prediction);
                                 }}
-                                className="px-4 py-3 hover:bg-white/8 hover:text-accent-foreground cursor-pointer select-none active:bg-accent transition-colors"
+                                className="px-4 py-3 hover:bg-muted hover:text-accent-foreground cursor-pointer select-none active:bg-accent transition-colors"
                                 role="button"
                                 tabIndex={0}
                                 onKeyDown={(e) => {
@@ -395,21 +441,24 @@ function CreateTrip() {
             </div>
 
             {location && (
-                <p className="text-white/60 text-sm -my-2">
+                <p className="text-muted-foreground text-sm -my-2">
                     Selected: <strong>{location}</strong>
                 </p>
             )}
 
             <div className='mt-8 flex flex-col gap-8'>
                 <div>
-                    <h2 className='text-xl font-semibold mb-4 text-foreground'>How many days are you staying?</h2>
+                    <label htmlFor="duration" className="form-label">02 — How long is your getaway?</label>
                     <Input
-                        placeholder={'Ex. 4'}
+                        id="duration"
+                        aria-describedby="duration-help"
+                        max={50}
+                        placeholder="e.g. 4"
                         type="number"
                         min={1}
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        className="h-14 rounded-2xl border-white/12 bg-black/10 text-foreground placeholder:text-white/35 shadow-warm focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
+                        className="h-14 rounded-2xl border-border bg-background text-foreground placeholder:text-muted-foreground shadow-warm focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
                         onKeyDown={(e) => {
                             if (["-", "+", "e", "E"].includes(e.key)) {
                                 e.preventDefault();
@@ -420,75 +469,96 @@ function CreateTrip() {
                             handleInputChange('noOfDays', val);
                         }}
                     />
+                    <p id="duration-help" className="mt-2 text-xs text-muted-foreground">From a quick escape to a longer adventure. Choose 1–50 days.</p>
                 </div>
             </div>
 
             <div className='mt-12'>
-                <h2 className='text-xl font-semibold mb-4 text-foreground'>Who are you travelling with?</h2>
+                <h2 className='text-xl font-semibold mb-4 text-foreground'>03 — Who’s coming along?</h2>
                 <div className='grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5'>
                     {SelectTravelersList.map((item, index) => (
-                        <div key={index}
+                        <button type="button" key={index}
                             onClick={() => handleInputChange('traveler', item.people)}
-                            className={`p-6 border cursor-pointer rounded-[24px] transition-all
-                        ${formData?.traveler == item.people ? 'border-primary bg-primary/12 shadow-warm-lg -translate-y-1' : 'border-white/10 bg-white/6 hover:border-white/20 hover:bg-white/8 hover:-translate-y-1'}
+                            aria-pressed={formData?.traveler === item.people}
+                            className={`p-4 sm:p-5 border-2 cursor-pointer rounded-2xl transition-all
+                        ${formData?.traveler == item.people ? 'border-primary bg-secondary ring-1 ring-primary' : 'border-border bg-card hover:border-primary hover:bg-secondary'}
                         `}>
                             <div className='flex justify-center mb-3'>
                                 {getTravelerIcon(item.icon)}
                             </div>
-                            <h2 className='font-bold text-base text-center text-foreground'>{item.title}</h2>
-                            <h2 className='text-xs text-white/60 mt-2 text-center'>{item.desc}</h2>
-                        </div>
+                            <span className='block font-bold text-base text-center text-foreground'>{item.title}</span>
+                            <span className='block text-xs text-muted-foreground mt-2 text-center'>{item.desc}</span>
+                        </button>
                     ))}
                 </div>
             </div>
 
             <div className='mt-12'>
-                <h2 className='text-xl font-semibold mb-4 text-foreground'>What is your budget?</h2>
+                <h2 className='text-xl font-semibold mb-4 text-foreground'>04 — What’s your travel style?</h2>
                 <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5'>
                     {SelectBudgetOptions.map((item, index) => (
-                        <div key={index}
+                        <button type="button" key={index}
                             onClick={() => handleInputChange('budget', item.title)}
-                            className={`p-6 border cursor-pointer rounded-[24px] transition-all
-                        ${formData?.budget == item.title ? 'border-primary bg-primary/12 shadow-warm-lg -translate-y-1' : 'border-white/10 bg-white/6 hover:border-white/20 hover:bg-white/8 hover:-translate-y-1'}
+                            aria-pressed={formData?.budget === item.title}
+                            className={`p-4 sm:p-5 border-2 cursor-pointer rounded-2xl transition-all
+                        ${formData?.budget == item.title ? 'border-primary bg-secondary ring-1 ring-primary' : 'border-border bg-card hover:border-primary hover:bg-secondary'}
                         `}>
                             <div className='flex justify-center mb-3'>
                                 {getBudgetIcon(item.icon)}
                             </div>
-                            <h2 className='font-bold text-lg text-center text-foreground'>{item.title}</h2>
-                            <h2 className='text-sm text-white/60 mt-2 text-center'>{item.desc}</h2>
-                        </div>
+                            <span className='block font-bold text-lg text-center text-foreground'>{item.title}</span>
+                            <span className='block text-sm text-muted-foreground mt-2 text-center'>{item.desc}</span>
+                        </button>
                     ))}
                 </div>
             </div>
 
-            <div className='my-10 justify-center flex'>
-                <Button 
+            <div className='mt-10 border-t border-border pt-7 flex flex-col items-center gap-3'>
+                {generationError && (
+                    <div role="alert" className="mb-3 w-full rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-left">
+                        <p className="font-semibold text-destructive">{generationError.title}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{generationError.description}</p>
+                        {generationError.showBillingLink && (
+                            <a
+                                href="https://ai.studio/projects"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-3 inline-flex text-sm font-semibold text-primary underline underline-offset-4"
+                            >
+                                Manage Gemini billing ↗
+                            </a>
+                        )}
+                    </div>
+                )}
+                <Button
                     size="lg"
-                    className='text-lg py-6 px-12 font-semibold min-w-52'
+                    className='text-sm sm:text-base py-6 px-5 sm:px-8 font-semibold w-full sm:w-auto rounded-full'
                     disabled={loading}
+                    aria-busy={loading}
                     onClick={OnGenerateTrip}>
                     {loading ?
-                        <AiOutlineLoading3Quarters className='h-7 w-7 animate-spin' /> : 'Generate Sunset Plan'
+                        <><AiOutlineLoading3Quarters className='h-5 w-5 animate-spin' /> Planning your adventure…</> : 'Create my itinerary'
                     }
                 </Button>
+                <p role="status" className="text-sm text-muted-foreground text-center">{loading ? "Gathering ideas and putting your days together. This may take up to a minute." : "Your plans, with room for a little spontaneity."}</p>
             </div>
 
             <Dialog open={openDialogue} onOpenChange={setOpenDialogue}>
-                <DialogContent className="sm:max-w-md travel-surface border-white/12">
+                <DialogContent className="sm:max-w-md travel-surface border-border">
                     <DialogHeader>
                         <DialogTitle className="sr-only">Sign In</DialogTitle>
-                        <DialogDescription className="space-y-6">
+                        <DialogDescription asChild><div className="space-y-6">
                             <div className="flex flex-col items-center pt-2">
                                 <div className="flex items-center space-x-2">
                                     <Zap className="h-5 w-5 text-primary" />
                                     <span className="font-bold text-lg text-foreground">TripKitAI</span>
                                 </div>
                             </div>
-                            
+
                             <div className="space-y-4 text-center">
                                 <div>
                                     <h2 className='font-semibold text-lg text-foreground mb-2'>Sign In With Google</h2>
-                                    <p className='text-sm text-white/65'>Sign in to save and manage your trips</p>
+                                    <p className='text-sm text-muted-foreground'>Sign in to save and manage your trips</p>
                                 </div>
                                 <Button
                                     onClick={login}
@@ -497,7 +567,7 @@ function CreateTrip() {
                                     <span>Sign In With Google</span>
                                 </Button>
                             </div>
-                        </DialogDescription>
+                        </div></DialogDescription>
                     </DialogHeader>
                 </DialogContent>
             </Dialog>

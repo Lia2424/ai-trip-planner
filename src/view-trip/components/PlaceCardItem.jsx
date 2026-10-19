@@ -1,3 +1,4 @@
+import TravelImage from '@/components/custom/TravelImage'
 import { Button } from '@/components/ui/button'
 import React, { useEffect, useState, useCallback } from 'react'
 import { FaMapLocationDot } from "react-icons/fa6";
@@ -50,20 +51,20 @@ function PlaceCardItem({place, city}) {
     : place.place_name;
 
   return (
-    <Link to={'https://www.google.com/maps/search/?api=1&query='+ encodeURIComponent(mapsQuery)} target='_blank' className='block text-foreground'>
-    <div className='mt-2 flex flex-col gap-4 rounded-[24px] border border-white/10 bg-white/[0.04] p-3 transition-all hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.07] hover:shadow-warm md:flex-row md:items-center'>
-    <img src={photoUrl?photoUrl:'/placeholder.jpg'} className='h-[170px] w-full object-cover rounded-[20px] md:h-[130px] md:w-[130px]' />
+    <Link to={'https://www.google.com/maps/search/?api=1&query='+ encodeURIComponent(mapsQuery)} target='_blank' rel='noopener noreferrer' className='block text-foreground'>
+    <div className='mt-2 flex flex-col gap-4 rounded-[24px] border border-border bg-muted p-3 transition-all hover:-translate-y-1 hover:border-border hover:bg-muted hover:shadow-warm md:flex-row md:items-center'>
+    <TravelImage alt={place.place_name || "Place to visit"} src={photoUrl?photoUrl:'/placeholder.jpg'} className='h-[170px] w-full object-cover rounded-[20px] md:h-[130px] md:w-[130px]' />
         <div className='flex flex-1 flex-col gap-3'>
             <div>
               <h2 className='font-bold text-foreground'>{place.place_name}</h2>
-              <p className='mt-2 text-sm text-white/65'>{place.details}</p>
+              <p className='mt-2 text-sm text-muted-foreground'>{place.details}</p>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs uppercase tracking-[0.22em] text-white/40">Open in maps</span>
-              <Button size="sm" className="shrink-0">
+              <span className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Open in maps</span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-2 text-xs font-medium">
                 <FaMapLocationDot />
                 Navigate
-              </Button>
+              </span>
             </div>
         </div>
     </div>

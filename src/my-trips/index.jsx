@@ -1,7 +1,7 @@
 import { db } from '@/service/firebaseConfig';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import UserTripCardItem from './components/UserTripCardItem';
 import { toast } from 'sonner';
 
@@ -60,11 +60,9 @@ function MyTrips() {
     };
 
     return (
-        <div className='container mx-auto px-4 lg:px-6 mt-10 max-w-7xl pb-16'>
+        <div className='page-shell'>
             <span className='travel-kicker'>Saved escapes</span>
-            <h2 className='mt-4 font-bold text-3xl md:text-4xl text-foreground'>
-              Your <span className='sunset-text'>sunset-themed</span> trip library
-            </h2>
+            <div className='mt-4 flex flex-wrap justify-between items-center gap-4'><div><h1 className='section-heading'>A world of plans.</h1><p className='mt-3 text-muted-foreground'>Your next adventures, all in one place.</p></div><Link to='/create-trip' className='rounded-full bg-primary px-5 py-3 text-sm text-primary-foreground'>+ Plan a new trip</Link></div>
 
             {error && (
                 <div className='mt-5 p-4 bg-destructive/10 border border-destructive/20 rounded-2xl'>
@@ -79,9 +77,9 @@ function MyTrips() {
             )}
 
             {loading ? (
-                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mt-5 gap-5'>
+                <div role='status' aria-label='Loading your trips' className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mt-5 gap-5'>
                     {[1,2,3,4,5,6].map((item, index)=>(
-                        <div key={index} className='h-[280px] w-full animate-pulse rounded-[28px] border border-white/10 bg-white/6'>
+                        <div key={index} className='h-[280px] w-full animate-pulse rounded-[28px] border border-border bg-muted'>
                         </div>
                     ))}
                 </div>
@@ -91,9 +89,9 @@ function MyTrips() {
                         <UserTripCardItem trip={trip} key={index}/>
                     ))}
                 </div>
-            ) : (
+            ) : !error && (
                 <div className='mt-10 text-center py-10 travel-card'>
-                    <p className='text-white/70 text-lg'>No trips found yet. Start planning your first escape.</p>
+                    <span className='travel-kicker'>A fresh page</span><h2 className='section-heading mt-4'>Your first adventure is waiting.</h2><p className='mt-4 text-muted-foreground'>Start with a destination. We’ll help you find your way.</p><Link to='/create-trip' className='mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-primary-foreground'>Plan my first trip ↗</Link>
                 </div>
             )}
         </div>

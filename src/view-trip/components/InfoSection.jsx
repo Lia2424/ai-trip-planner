@@ -1,3 +1,4 @@
+import TravelImage from '@/components/custom/TravelImage'
 import { Button } from '@/components/ui/button'
 import React, { useEffect, useState, useCallback } from 'react'
 import { MdIosShare } from "react-icons/md"
@@ -100,28 +101,28 @@ function InfoSection({ trip }) {
   return (
     <div className="travel-card overflow-hidden">
       <div className="relative">
-        <img src={photoUrl} className='h-[340px] w-full object-cover'/>
+        <TravelImage alt={trip?.userSelection?.location || "Your destination"} src={photoUrl} className='h-[340px] w-full object-cover'/>
         <div className="absolute inset-0 bg-gradient-to-t from-[#091223]/90 via-[#091223]/25 to-transparent" />
         <div className="absolute left-6 top-6">
-          <span className="travel-kicker">Sunset itinerary</span>
+          <span className="travel-kicker">Your travel journal</span>
         </div>
       </div>
       
       <div className='flex flex-col gap-6 p-6 md:flex-row md:items-start md:justify-between'>
         <div className='flex flex-col gap-3'>
           {city && country ? (
-            <h2 className='font-bold text-2xl md:text-3xl text-foreground'>{city.trim()}, {country.trim()}</h2>
+            <h1 className='font-heading text-3xl md:text-4xl text-foreground'>{city.trim()}, {country.trim()}</h1>
           ) : (
-            <h2 className='font-bold text-2xl md:text-3xl text-foreground'>{trip?.tripData?.travel_plan?.location || trip?.userSelection?.location}</h2>
+            <h1 className='font-heading text-3xl md:text-4xl text-foreground'>{trip?.tripData?.travel_plan?.location || trip?.userSelection?.location}</h1>
           )}
           <div className='flex gap-3 flex-wrap'>
-            <div className='px-3 py-1.5 rounded-full border border-white/10 bg-white/6 text-foreground font-medium text-sm'>
+            <div className='px-3 py-1.5 rounded-full border border-border bg-muted text-foreground font-medium text-sm'>
               📅 {trip.userSelection?.noOfDays} day(s)
             </div>
-            <div className='px-3 py-1.5 rounded-full border border-white/10 bg-white/6 text-foreground font-medium text-sm'>
+            <div className='px-3 py-1.5 rounded-full border border-border bg-muted text-foreground font-medium text-sm'>
               👤 {trip.userSelection?.traveler}
             </div>
-            <div className='px-3 py-1.5 rounded-full border border-white/10 bg-white/6 text-foreground font-medium text-sm'>
+            <div className='px-3 py-1.5 rounded-full border border-border bg-muted text-foreground font-medium text-sm'>
               💵 {trip.userSelection?.budget}
             </div>
           </div>
@@ -129,7 +130,7 @@ function InfoSection({ trip }) {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="icon" className="rounded-full">
+            <Button variant="outline" size="icon" aria-label="Share this trip" className="rounded-full">
               <MdIosShare className="h-5 w-5" />
             </Button>
           </PopoverTrigger>
@@ -137,7 +138,7 @@ function InfoSection({ trip }) {
           <PopoverContent
             side="bottom"
             align="end"
-            className="travel-surface w-[280px] flex flex-col items-center text-sm p-5 border-white/12"
+            className="travel-surface w-[280px] flex flex-col items-center text-sm p-5 border-border"
           >
             <h3 className="font-semibold mb-5 text-foreground">Share this trip</h3>
 

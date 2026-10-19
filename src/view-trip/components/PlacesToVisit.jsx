@@ -64,9 +64,10 @@ function PlacesToVisit({trip}) {
     <div>
         <div className='mt-10 mb-4'>
           <span className='travel-kicker'>Daily route</span>
-          <h2 className='font-bold text-2xl mt-3 text-foreground'>Places to Visit</h2>
+          <h2 className='section-heading mt-3 text-foreground'>Days worth remembering</h2>
         </div>
 
+        {!trip?.tripData?.travel_plan?.itinerary?.length && <p className='travel-card p-6 text-muted-foreground'>No daily activities were included in this itinerary.</p>}
         <div className='mt-4 space-y-6'>
             {trip?.tripData?.travel_plan?.itinerary?.map((item, dayIdx) => {
               // Sort places chronologically by best_time_to_visit
@@ -79,12 +80,12 @@ function PlacesToVisit({trip}) {
                 >
                     <div className='mb-4 flex items-center justify-between gap-3'>
                       <h3 className='font-bold text-xl text-foreground'>Day {item.day}</h3>
-                      <span className='text-xs uppercase tracking-[0.22em] text-white/40'>Sunrise to night</span>
+                      <span className='text-xs uppercase tracking-[0.22em] text-muted-foreground'>Your daily itinerary</span>
                     </div>
                     <div className='space-y-4'>
                       {sortedPlaces.map((place, placeIdx) => (
                         <div key={`day-${item?.day ?? dayIdx}-place-${placeIdx}`}> 
-                            <h4 className='mb-2 font-medium text-sm text-[#ffd37a]'>
+                            <h4 className='mb-2 font-medium text-sm text-primary'>
                               {place.best_time_to_visit}
                             </h4>
                             <PlaceCardItem place={place} city={city}/>

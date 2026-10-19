@@ -1,3 +1,4 @@
+import TravelImage from '@/components/custom/TravelImage'
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { PHOTO_REF_URL, GetPlaceDetails } from '@/service/GlobalApi';
@@ -6,7 +7,7 @@ import { formatPrice } from '@/utils/priceFormatter';
 function HotelCardItem({ hotel, city }) {
       const [photoUrl, setPhotoUrl] = useState();
       const [googleRating, setGoogleRating] = useState(null);
-    
+
       // Fetch hotel photo and rating using city-specific text search (same approach as activity places)
       const GetPlacePhoto = useCallback(async () => {
         try {
@@ -21,16 +22,16 @@ function HotelCardItem({ hotel, city }) {
           } else {
             searchQuery = hotel?.name || hotel?.address || '';
           }
-          
+
           if (!searchQuery) {
             console.log('No search query available for hotel:', hotel?.name);
             return;
           }
-          
+
           const data = {
             textQuery: searchQuery
           };
-          
+
           // Add location bias if geo coordinates are available (same as PlaceCardItem)
           if (hotel?.geo_coordinates?.latitude && hotel?.geo_coordinates?.longitude) {
             data.locationBias = {
@@ -43,18 +44,18 @@ function HotelCardItem({ hotel, city }) {
               }
             };
           }
-          
+
           let placeFound = null;
           try {
             const result = await GetPlaceDetails(data);
-            
+
             if (result?.data?.places?.length > 0) {
               placeFound = result.data.places[0];
             }
           } catch (textError) {
             console.error('Text search failed for hotel:', hotel?.name, textError);
           }
-          
+
           // If we found a place, extract photo and rating
           if (placeFound) {
             // Set photo if available
@@ -69,7 +70,7 @@ function HotelCardItem({ hotel, city }) {
             } else {
               console.log('No photos found for hotel:', hotel?.name, 'Place:', placeFound.displayName?.text, 'Available fields:', Object.keys(placeFound));
             }
-            
+
             // Set rating if available
             if (placeFound.rating !== undefined && placeFound.rating !== null) {
               setGoogleRating(placeFound.rating);
@@ -84,7 +85,7 @@ function HotelCardItem({ hotel, city }) {
           console.error('Error fetching hotel photo and rating:', error);
         }
       }, [hotel, city]);
-    
+
       useEffect(()=>{
         if (hotel) {
           GetPlacePhoto();
@@ -92,17 +93,17 @@ function HotelCardItem({ hotel, city }) {
       }, [hotel, GetPlacePhoto])
 
   return (
-    <Link to={'https://www.google.com/maps/search/?api=1&query='+ hotel.name + "," + hotel?.address} target='_blank' className='text-foreground'>
-                <div className='travel-card overflow-hidden transition-all cursor-pointer hover:-translate-y-1 hover:border-white/20 hover:shadow-warm-lg'>
-                    <img src={photoUrl?photoUrl:'/placeholder.jpg'} className="h-[210px] w-full object-cover"/>                    
+    <Link to={'https://www.google.com/maps/search/?api=1&query='+ hotel.name + "," + hotel?.address} target='_blank' rel='noopener noreferrer' className='text-foreground'>
+                <div className='travel-card overflow-hidden transition-all cursor-pointer hover:-translate-y-1 hover:border-border hover:shadow-warm-lg'>
+                    <TravelImage alt={hotel?.name || "Hotel"} src={photoUrl?photoUrl:'/placeholder.jpg'} className="h-[210px] w-full object-cover"/>
                     <div className='p-4 flex flex-col gap-3'>
                         <div>
                           <h2 className='font-medium text-foreground'>{hotel?.name}</h2>
-                          <h2 className='mt-2 text-xs text-white/60'>📍 {hotel?.address}</h2>
+                          <h2 className='mt-2 text-xs text-muted-foreground'>📍 {hotel?.address}</h2>
                         </div>
                         <div className='flex flex-wrap items-center gap-3 mt-1 text-sm'>
-                            <h2 className='font-semibold rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-foreground'>💵 {formatPrice(hotel?.price_per_night)} per night</h2>
-                            <h2 className='font-semibold rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-foreground'>
+                            <h2 className='font-semibold rounded-full border border-border bg-muted px-3 py-1.5 text-foreground'>💵 {formatPrice(hotel?.price_per_night)} per night</h2>
+                            <h2 className='font-semibold rounded-full border border-border bg-muted px-3 py-1.5 text-foreground'>
                                 ⭐ {googleRating !== null ? googleRating.toFixed(1) : hotel?.rating || 'N/A'} {googleRating !== null ? '(Google)' : 'stars'}
                             </h2>
                         </div>

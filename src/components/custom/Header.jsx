@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from '../ui/button'
 import {
     Popover,
@@ -27,9 +27,6 @@ function Header() {
     const user = JSON.parse(localStorage.getItem('user'));
     const [openDialogue, setOpenDialogue] = useState(false);
 
-    useEffect(() => {
-        // Check user authentication
-    }, [])
 
     // Google OAuth login configuration
     const login = useGoogleLogin({
@@ -55,72 +52,67 @@ function Header() {
     }
 
     return (
-        <header className="sticky top-0 z-50 border-b border-white/10 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-            <div className="container mx-auto px-4 lg:px-6">
-                <div className="flex h-16 items-center justify-between">
+        <header className="sticky top-0 z-50 border-b border-border bg-background">
+            <div className="max-w-7xl mx-auto px-4 md:px-8">
+                <div className="flex min-h-20 flex-wrap items-center justify-between gap-3 py-3">
                     <div className="flex items-center space-x-2 flex-1">
                         <Link to="/" className="flex items-center space-x-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/8 shadow-warm">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-muted shadow-warm">
                                 <Plane className="h-5 w-5 text-primary" />
                             </div>
                             <div className="flex flex-col leading-none">
                                 <span className="font-bold text-base text-foreground">TripKitAI</span>
-                                <span className="text-[11px] uppercase tracking-[0.22em] text-white/45">Sunset routes</span>
+                                <span className="hidden sm:block text-[9px] mt-1 uppercase tracking-[0.16em] text-muted-foreground">Go somewhere good</span>
                             </div>
                         </Link>
                     </div>
                     <nav className="hidden md:flex items-center space-x-6 text-sm font-medium flex-1 justify-end mr-4">
-                        <Link to="/faq" className="text-white/60 hover:text-white transition-colors">
+                        <Link to="/create-trip" className="text-muted-foreground hover:text-foreground">Plan a trip</Link>
+                        <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
                             FAQ
                         </Link>
                     </nav>
                     <div className="flex items-center space-x-2 justify-end">
                         {user ? (
                             <div className='flex items-center gap-3'>
-                                <Link to='/create-trip'>
-                                    <Button size="sm" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
-                                        Create Trip
-                                    </Button>
-                                </Link>
-                                <Link to='/my-trips'>
-                                    <Button size="sm" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
-                                        My Trips
-                                    </Button>
-                                </Link>
+                                <Button asChild size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground hover:bg-muted">
+                                        <Link to='/create-trip'>Plan trip</Link>
+                                </Button>
+                                <Button asChild size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground hover:bg-muted">
+                                        <Link to='/my-trips'>My trips</Link>
+                                </Button>
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <img src={user?.picture}
+                                        <button aria-label="Open account menu" className="rounded-full"><img src={user?.picture}
                                             alt="profile"
-                                            className='w-9 h-9 rounded-full object-cover cursor-pointer ring-2 ring-white/15' />
+                                            className='w-9 h-9 rounded-full object-cover cursor-pointer ring-2 ring-border' /></button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="travel-surface border-white/12">
-                                        <h2 className='cursor-pointer text-foreground'
+                                    <PopoverContent className="travel-surface border-border">
+                                        <button className='text-foreground'
                                             onClick={() => {
                                                 googleLogout();
-                                                localStorage.clear();
+                                                localStorage.removeItem('user');
                                                 window.location.reload();
-                                            }}>Logout</h2>
+                                            }}>Sign out</button>
                                     </PopoverContent>
                                 </Popover>
                             </div>
                         ) : (
                             <>
-                                <Button size="sm" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10" onClick={() => setOpenDialogue(true)}>
+                                <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => setOpenDialogue(true)}>
                                     Sign In
                                 </Button>
-                                <Link to="/create-trip">
-                                    <Button size="sm">Get Started</Button>
-                                </Link>
+                                <Button asChild size="sm" className="rounded-full"><Link to="/create-trip">Get started</Link></Button>
                             </>
                         )}
                     </div>
                 </div>
             </div>
             <Dialog open={openDialogue} onOpenChange={setOpenDialogue}>
-                <DialogContent className="sm:max-w-md travel-surface border-white/12">
+                <DialogContent className="sm:max-w-md travel-surface border-border">
                     <DialogHeader>
                         <DialogTitle className="sr-only">Sign In</DialogTitle>
-                        <DialogDescription className="space-y-6">
+                        <DialogDescription asChild><div className="space-y-6">
                             <div className="flex flex-col items-start pt-2">
                                 <div className="flex items-center space-x-2">
                                     <Plane className="h-5 w-5 text-primary" />
@@ -131,7 +123,7 @@ function Header() {
                             <div className="space-y-4 text-left">
                                 <div>
                                     <h2 className='font-semibold text-lg text-foreground mb-2'>Sign In With Google</h2>
-                                    <p className='text-sm text-white/65'>Sign in to save and manage your trips</p>
+                                    <p className='text-sm text-muted-foreground'>Sign in to save and manage your trips</p>
                                 </div>
                                 <Button
                                     onClick={login}
@@ -140,7 +132,7 @@ function Header() {
                                     <span>Sign In With Google</span>
                                 </Button>
                             </div>
-                        </DialogDescription>
+                        </div></DialogDescription>
                     </DialogHeader>
                 </DialogContent>
             </Dialog>
